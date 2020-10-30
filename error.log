@@ -1,0 +1,12 @@
+
+[2020-10-29 12:50:31] Traceback (most recent call last):
+  File "C:\Users\Jim Shepich\Documents\Research\GC Post Processor\cef_test.py", line 40, in <module>
+    cef.CreateBrowserSync(url=url,
+NameError: name 'url' is not defined
+
+
+[2020-10-29 21:06:26] Traceback (most recent call last):
+  File "C:\Users\Jim Shepich\Documents\Research\GC Post Processor\main.py", line 252, in <module>
+    cef.ShutDown()
+AttributeError: module 'cefpython3.cefpython_py37' has no attribute 'ShutDown'
+
