@@ -110,7 +110,7 @@ class peak:
 # INITIALIZE TKINTER GUI WINDOW
 #================================================================
 window = tk.Tk() # initialize
-
+window.title("M|Chroma")
 #try:
 #    window.lift()
 #    window.wm_attributes("-topmost", True) #Keep Tkinter window on top of other windows
