@@ -5,12 +5,13 @@ import modules
 modules.initialize()
 import tkinter as tk
 import pandas as pd
-import plotly.express as px
 import tkinter.filedialog as file
+import plotly.express as px
+from plotly.subplots import make_subplots
 import plotly.graph_objects as go
-import ipywidgets
+#import ipywidgets
 import numpy as np
-from pandastable import Table, TableModel
+#from pandastable import Table, TableModel
 import copy
 from cefpython3 import cefpython as cef#https://github.com/cztomczak/cefpython/blob/master/api/Browser.md#loadurl
 import threading
@@ -22,8 +23,12 @@ import kaleido
 #================================================================
 #INITIALIZE PLOTLY GRAPH OBJECT
 #================================================================
-fig = go.FigureWidget()
-fig.update_layout(showlegend=False)
+fig = make_subplots(rows=2, cols=1, specs=[[{"type": "scatter"}],[{"type": "table"}]])
+#fig = go.FigureWidget()
+fig.update_layout(showlegend=False)#,hovermode='x unified')
+fig.update_xaxes(title_text="Time (min.)", showgrid=False, row=1, col=1)
+fig.update_yaxes(title_text="Abundance (counts)", showgrid=False, row=1, col=1)
+
 #================================================================
 # DEFINE STATE OBJECT AND SAVE STATE FUNCTION FOR UNDO/REDO FUNCTIONALITIES
 #================================================================
@@ -52,7 +57,7 @@ class chromatogram:
             self.derivative_series.append(self.signal_series[x+1]-self.signal_series[x])#computes the right handed slope at any point
             self.derivative_series.append(0)#we need one more data point at the end so the lengths don't mismatch
     def plot(self):
-        fig.add_trace(go.Scatter(x=self.time_series, y=self.signal_series))
+        fig.add_trace(go.Scatter(x=self.time_series, y=self.signal_series),1,1)
     peaks=[]
     peak_table=pd.DataFrame(columns=["Retention Index","Retention Time","Area","Height","Width","Plate Count"])
 
@@ -85,7 +90,7 @@ class peak:
     def add_to_table(self):
         state.active_chromatogram.peak_table=state.active_chromatogram.peak_table.append({'Retention Index' : 0 , 'Retention Time' : self.retention_time, 'Area' : self.area_bb, 'Height' : self.height, 'Width' : self.width_hh, 'Plate Count' : self.plates} , ignore_index=True)
     def shade_under_curve(self):
-        fig.add_trace(go.Scatter(x=self.time_series, y=self.signal_series, fill='tozeroy')) # fill down to xaxis
+        fig.add_trace(go.Scatter(x=self.time_series, y=self.signal_series, fill='tozeroy'),1,1) # fill down to xaxis
         fig.add_trace(go.Scatter(
     x=[self.retention_time],
     y=[self.height],
@@ -93,7 +98,8 @@ class peak:
     name="",
     text=[str(round(self.retention_time,2))+" min."],
     textposition="top center"
-    ))
+    ),1,1)
+'''       #DRAW INTEGRAL
         fig.add_trace(go.Scatter(
         x=self.time_series,
         y=[0]*(len(self.signal_series)-1),
@@ -102,8 +108,8 @@ class peak:
         text=["{:.2e}".format(self.area_bb)],
         textposition="bottom center"
         ))
-        #"{:.2e}".format(12300000)
-        update_plot()
+        #"{:.2e}".format(12300000)'''
+    update_plot()
         #for now, this is as good as I can do
 
 #================================================================
@@ -159,12 +165,15 @@ peak_end=tk.Entry()
 #================================================================
 # GUI PEAK TABLE
 #================================================================
+'''
 empty_peak_table=pd.DataFrame(columns=["Retention Index","Retention Time","Area","Height","Width","Plate Count"])
 empty_peak_table=empty_peak_table.append({'Retention Index' : 0 , 'Retention Time' : 0, 'Area' : 0, 'Height' : 0, 'Width' : 0, 'Plate Count' : 0} , ignore_index=True)
 table_frame = tk.Frame(window)
 peak_table=Table(table_frame)
+'''
 
 def update_peak_table():
+    '''
     peak_table.model.df=state.active_chromatogram.peak_table
     peak_table.model.df=peak_table.model.df.append({'Retention Index' : "Retention Index" , 'Retention Time' : "Retention Time", 'Area' : "Area", 'Height' : "Height", 'Width' : "Width", 'Plate Count' : "Plate Count"} , ignore_index=True)
     peak_table.adjustColumnWidths()#This method only resizes based on column values, not column headers
@@ -172,9 +181,16 @@ def update_peak_table():
     peak_table.redraw()
     peak_table.model.df=state.active_chromatogram.peak_table
     peak_table.redraw()
+    '''
+    active = state.active_chromatogram.peak_table
+    fig.add_trace(go.Table(
+    header=dict(values=list(active.columns)),
+    cells=dict(values=[active["Retention Index"], active["Retention Time"], active["Area"], active["Height"],active["Width"],active["Plate Count"]]))
+        ,row=2,col=1)
+    #table.show()
 
-peak_table.model.df=empty_peak_table
-peak_table.show()
+#peak_table.model.df=empty_peak_table
+#peak_table.show()
 
 #================================================================
 # EXPORT PEAK TABLE TO CSV
@@ -215,7 +231,7 @@ menubar.add_cascade(label="File", menu=filemenu)
 #================================================================
 # PACK FRAME ELEMENTS
 #================================================================
-plot_frame = tk.Frame(window, height=500, width=800)
+plot_frame = tk.Frame(window, height=600, width=800)
 plot_frame.pack(side='top', fill='x')
 
 peak_pick_button.pack(side="top")
@@ -223,7 +239,12 @@ peak_start_label.pack()
 peak_start.pack()
 peak_end_label.pack()
 peak_end.pack()
-table_frame.pack(fill='both', expand=True)
+#table_frame.pack(fill='both', expand=True)
+
+#================================================================
+# JAVASCRIPT EVENT HANDLING
+#================================================================
+
 
 
 #================================================================
@@ -232,7 +253,7 @@ table_frame.pack(fill='both', expand=True)
 def test_thread(frame):
     sys.excepthook = cef.ExceptHook
     window_info = cef.WindowInfo(plot_frame.winfo_id())
-    window_info.SetAsChild(plot_frame.winfo_id(), [0, 0, 800, 500])
+    window_info.SetAsChild(plot_frame.winfo_id(), [0, 0, 800, 600])
     cef.Initialize()
     global browser
     #browser = cef.CreateBrowserSync(window_info, url='file:///'+str(path).replace("\\", "/")+'/gram.html')
