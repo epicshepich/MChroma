@@ -1,12 +1,9 @@
-In 7:32PM
-Out 11:38 PM
-5.5h+4.1h=9.6h
 ================================================================
 GENERAL NOTES
 ================================================================
 -any input that could be aborted by users should instead be kept in a try/except statement
 
-
+-improve zooming controls
 -reference peak & capacity factor
 -label peak retention time and area on figure
 -Use click/drag for setting peak bounds (possibly by accessing DOM tree through cefpython3)

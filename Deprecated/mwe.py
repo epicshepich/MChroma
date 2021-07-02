@@ -37,18 +37,28 @@ plot_frame.pack(side='top', fill='x')
 #================================================================
 # JAVASCRIPT EVENT HANDLING
 #================================================================
-JS_script = """
-thegraph = document.getElementsByClassName("plotly-graph-div js-plotly-plot")[0]
-thegraph.on('plotly_click', function(eventData){
-alert("Gotcha")
-}
-);
-"""
-
-
+#JS_script = """
+#thegraph = document.getElementsByClassName("plotly-graph-div js-plotly-plot")[0]
+#thegraph.on('plotly_click', function(eventData){
+#alert("Gotcha")
+#}
+#);
+#"""
+JS_script="document.body.innerHTML=''"
 #================================================================
 # KEEP WINDOW OPEN AND HANDLE CHROMIUM BROWSER
 #================================================================
+#def lethal_interjection():
+#    pass
+
+#def lethal_click_handler
+def lethal_message_handler(self, browser, message, **kwargs):
+    "Browser console interface"
+    #self.chrome.console.append(message)
+    print(message)
+
+
+
 def test_thread(frame):
     sys.excepthook = cef.ExceptHook
     window_info = cef.WindowInfo(plot_frame.winfo_id())
@@ -57,8 +67,20 @@ def test_thread(frame):
     global browser
     #browser = cef.CreateBrowserSync(window_info, url='file:///'+str(path).replace("\\", "/")+'/gram.html')
     browser = cef.CreateBrowserSync(window_info, url='file:///'+str(path).replace("\\", "/")+'/gram.html')
+
+    class LoadHandler(object):
+        def OnLoadingStateChange(self, Browser, is_loading, **_):
+            print("boss please")
+            if not is_loading:
+                Browser.ExecuteJavascript("document.getElementsByName('q')[0].value = 24")
+                print("This works")
+
+    browser.SetClientHandler(LoadHandler)
     #print('file:///'+str(path).replace("\\", "/")+'/gram.html')
+    #browser.ExecuteJavascript(JS_script)
     cef.MessageLoop()
+    #
+
 
 thread = threading.Thread(target=test_thread, args=(plot_frame,))
 thread.start()
