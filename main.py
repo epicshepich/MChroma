@@ -22,20 +22,15 @@ class Empty:
     #empty class for making standalone objects
 
 #================================================================
-#INITIALIZE MATPLOTLIB GRAPH OBJECT
-#================================================================
-graph = Empty() #master object to store all relevant graphing variables
-graph.fig = Figure(figsize=(5, 4), dpi=100)#container for subplots
-graph.plot = graph.fig.add_subplot(111)#subplot is the actual graph
-#graph.plot.xlabel("Time (min.)")
-
-
-#================================================================
-# INITIALIZE TKINTER GUI WINDOW
+#INITIALIZE GUI
 #================================================================
 windows = {"main":tk.Tk()} # initialize
 windows["main"].title("M|Chroma")
 
+graph = Empty() #master object to store all relevant graphing variables
+graph.fig = Figure(figsize=(5, 2), dpi=100)#container for subplots
+graph.plot = graph.fig.add_subplot(111)#subplot is the actual graph
+#graph.plot.xlabel("Time (min.)")
 graph.canvas = FigureCanvasTkAgg(graph.fig, master=windows["main"])
 #TKinter object containing the MatPlotLib figure
 graph.canvas.draw()
@@ -43,12 +38,26 @@ graph.canvas.draw()
 #(note: graph does not automatically update when changed)
 graph.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
+
+
+blank_gram = Chromatogram({"ID":"","data":[0,0]})
+blank_gram.update()
+#create a blank chromatogram solely for the purpose of extracting headers for
+#the peak summary table
+#I do it this way because if I change a field, I don't want to have to fix it
+#in multiple places in the code
+graph.table=graph.plot.table(
+    cellText=[[""]*(len(blank_gram.peak_table.columns))],
+    colLabels=blank_gram.peak_table.columns,loc="bottom")
+#this should make the peak summary table below the subplot
+
 def plot(gram):
     """This method takes a Chromatogram object as its argument and it draws
     the chromatogram the graph."""
     if not gram.hidden:
         graph.plot.plot(gram.time_series, gram.signal_series)
         graph.canvas.draw()
+
 
 #================================================================
 # SET UP HISTORY OBJECT FOR UNDO/REDO FUNCTIONALITY
@@ -110,6 +119,20 @@ class History:
         graph.plot.cla() #clears the plot
         for gram in self.present().chromatograms:
             plot(gram) #redraws each unhidden chromatogram
+
+        ic(history.present().active().peak_table)
+        if not history.present().active().peak_table.empty:
+            table_temp = history.present().active().peak_table
+            #contraction for the next part
+            graph.table=graph.plot.table(
+                cellText=table_temp.values,
+                colLabels=table_temp.columns,loc="bottom")
+        else:
+            graph.table=graph.plot.table(
+                cellText=[[""]*(len(blank_gram.peak_table.columns))],
+                colLabels=blank_gram.peak_table.columns,loc="bottom")
+            #Make the table blank again when a peakless chromatogram is active
+
 
 history = History()
 
@@ -174,6 +197,8 @@ def on_click(event):
                 #the new peak is added to the active chromatogram
                 history.present().active().update()
                 #reindex the peaks & update the peak summary table
+                history.update()
+                #update the GUI's graph and table
                 peak_bounds=[]
                 picking=False
                 #reset these temp variables for the next peak

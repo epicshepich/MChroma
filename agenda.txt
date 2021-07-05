@@ -61,7 +61,7 @@ SAVING/LOADING CHROMATOGRAMS
     -There might be a module that easily saves/loads variables
     -In that case, just export the history object and load it back in?
 
-
+plt.savefig('D:\\mpl_logo_with_title.png', dpi=dpi)
 ================================================================
 SETTINGS
 ================================================================
@@ -77,7 +77,7 @@ SETTINGS
 ================================================================
 KNOWN BUGS
 ================================================================
-When trying to undo importing the first chromatogram:
+-When trying to undo importing the first chromatogram:
     Exception in Tkinter callback
     Traceback (most recent call last):
     File "C:\ProgramData\Anaconda3\lib\tkinter\__init__.py", line 1892, in __call__
@@ -87,3 +87,8 @@ When trying to undo importing the first chromatogram:
     File "C:\Users\epics\Documents\Code\MChroma\MChroma\main.py", line 61, in active
         return self.chromatograms[self.active_index]
         IndexError: list index out of range
+
+-Figure scaling is really gimpy: the peak table gets cut off, and resizing the
+    window seems to resize the plot more than the table.
+
+    
