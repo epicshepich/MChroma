@@ -3,7 +3,9 @@ GENERAL NOTES / KEY FEATURES
 ================================================================
 -Any input that could be aborted by users should instead be kept in a try/except statement
 -Need a peaks table
--Should use a requirements.txt like Houston does instead of modules.py
+    +https://pandas.pydata.org/docs/reference/api/pandas.plotting.table.html
+    +https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.table.html
+-Add chromatogram names
 
 
 ================================================================
@@ -51,7 +53,7 @@ ACTIVE CHROMATOGRAM
 SAVING/LOADING CHROMATOGRAMS
 ================================================================
 -Start back from scratch :')
--Export peak data to CSV
+-Default file names
 -Export plot and table to PDF
 
 

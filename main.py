@@ -1,15 +1,14 @@
 #================================================================
 # IMPORT MODULES
 #================================================================
-import modules
-modules.initialize()
-import tkinter as tk
+from chromatogram import Chromatogram, Peak
+import save as save
 import pandas as pd
+import numpy as np
+import tkinter as tk
 import tkinter.filedialog
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-#import plotly.express as px
-import numpy as np
 import copy
 import sys
 import pathlib
@@ -44,6 +43,12 @@ graph.canvas.draw()
 #(note: graph does not automatically update when changed)
 graph.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
 
+def plot(gram):
+    """This method takes a Chromatogram object as its argument and it draws
+    the chromatogram the graph."""
+    if not gram.hidden:
+        graph.plot.plot(gram.time_series, gram.signal_series)
+        graph.canvas.draw()
 
 #================================================================
 # SET UP HISTORY OBJECT FOR UNDO/REDO FUNCTIONALITY
@@ -86,7 +91,7 @@ class History:
         """"This method returns to the previous SaveState in the cache."""
         if self.present_index>0:
             self.present_index-=1
-            self.present().active().plot()
+            plot(self.present().active())
             self.update()
         else:
             print("Nothing to undo!")
@@ -95,7 +100,7 @@ class History:
         """This method returns to the next SaveState in the cache."""
         if self.present_index<len(self.states)-1:
             self.present_index+=1
-            self.present().active().plot()
+            plot(self.present().active())
             self.update()
         else:
             print("Nothing to redo!")
@@ -104,130 +109,10 @@ class History:
         """"This method is invoked to apply a new SaveState"""
         graph.plot.cla() #clears the plot
         for gram in self.present().chromatograms:
-            gram.plot() #redraws each unhidden chromatogram
+            plot(gram) #redraws each unhidden chromatogram
 
 history = History()
 
-#================================================================
-# DEFINE CHROMATOGRAM CLASS
-#================================================================
-class Chromatogram:
-    """Chromatogram class is used to store all the information about a
-    chromatogram: raw data, axis scale factors, peaks, etc.
-
-    Parameters:
-        raw_data - expects a list of integers corresponding to signal intensity
-            in detector counts"""
-    def __init__(self,raw_data):
-        self.signal_series=raw_data
-        self.time_scale=0.0016667#Number of data points recorded per minute
-        self.time_series=[t*self.time_scale for t in range(len(self.signal_series))]
-        #convert independent variable from data point # to time in minutes
-
-        self.derivative_series=[self.signal_series[x+1]-self.signal_series[x]\
-            for x in range(len(self.signal_series)-1)]
-        #computes the right handed slope at any point
-        self.derivative_series.append(0)
-        #we need one more data point at the end so the lengths don't mismatch
-        self.peaks=[]
-        self.hidden=False
-        #toggles display of chromatogram on graph
-
-    def plot(self):
-        """This method draws the chromatogram on the graph"""
-        if not self.hidden:
-            graph.plot.plot(self.time_series, self.signal_series)
-            graph.canvas.draw()
-
-    def reindex_peaks(self):
-        """This method orders peaks from lowest rt to highest"""
-        peak_order=[]
-        peaks_temp=[]
-        for peak_1 in self.peaks:
-            peak_index = 0
-            if len(self.peaks) <=1:
-                break
-            for peak_2 in self.peaks:
-                if peak_1.retention_time>peak_2.retention_time:
-                    peak_index+=1
-                    #Assign each peak an index based on the order of its retention time
-                elif peak_1.retention_time==peak_2.retention_time:
-                    print("Error: Peaks should have distinct retention times!")
-            peak_order.append(self.peak_index)
-        for index in peak_order:
-            peaks_temp.append(self.peaks[index])
-            #reorder peaks based on their assigned indices
-        self.peaks = peaks_temp #overwrite unsorted list with newly sorted list
-
-
-#================================================================
-# DEFINE PEAK CLASS
-#================================================================
-class Peak:
-    """Peak class contains data about a given peak, including the subset of
-    raw data and time series the peak contains, peak area, maximum height,
-    half-height width, retention time, etc."""
-
-    def __init__(self, bounds, area_mode="bb"):
-        self.t_0 = bounds[0]#starting time and height of click
-        self.t_f = bounds[1]#ending time and height of click
-        self.i_0 = int(np.round(self.t_0/history.present().active().time_scale))
-        self.i_f = int(np.round(self.t_f/history.present().active().time_scale))
-        #indices of incident and final data points in the chromatogram raw data
-        self.time_series = history.present().active().time_series[self.i_0:self.i_f+1]
-        self.signal_series = history.present().active().signal_series[self.i_0:self.i_f+1]
-        #subset of raw data contained in peak
-        self.s_0 = self.signal_series[0]
-        self.s_f = self.signal_series[-1]
-        self.height = max(self.signal_series)
-
-        self.area_modifiers = {
-            "bb":0,
-            "vv":sum([(self.s_f-self.s_0)/(self.t_f-self.t_0)*n\
-                for n in range(len(self.time_series))]),
-            "bv":sum([(0-self.s_0)/(self.t_f-self.t_0)*n\
-                for n in range(len(self.time_series))]),
-            "vb":sum([(self.s_f-0)/(self.t_f-self.t_0)*n\
-                for n in range(len(self.time_series))])
-        }
-        #modifiers for different integration modes: base-base, valley-valley,
-        #left base to right valley, right base to left valley
-        #The modifiers are integrals of the lines connecting the bases/valleys
-
-        self.areas={}
-        for key in self.area_modifiers:
-            self.areas[key]=sum(self.signal_series)-self.area_modifiers[key]
-        #areas computed with each mode
-        self.area = self.areas[area_mode]
-        #area computed with the desired mode
-
-        i_maxima = [index for index in range(len(self.time_series))\
-            if self.signal_series[index] == self.height]
-        #finds all time points with maximum signal in case detector caps out
-        i_max=int(np.floor((len(i_maxima)-1)/2))
-        #as an estimate, the middle of the peak is in the middle of the plateau
-        self.retention_time=self.time_series[i_max]
-        #the retention time occurs at the crest of the peak
-
-        try:
-            i_over_hh = [index for index in range(len(self.signal_series))\
-                if self.signal_series[index]>self.height/2]
-            #all indices for which the singal is > half the height
-            self.width_hh=self.time_series[i_over_hh[-1]]\
-                -self.time_series[i_over_hh[0]]
-            #hh width is total duration of time for which the signal is
-            #greater than half-height
-            self.plates=5.54*(self.retention_time/self.width_hh)\
-                *(self.retention_time/self.width_hh)
-            #calculates the number of theoretical plates for a peak
-        except:
-            print("Error computing half-height width")
-
-        #ic(self.retention_time)
-        #ic(self.area)
-        #ic(self.height)
-        #ic(self.width_hh)
-        #ic(self.plates)
 
 #================================================================
 # IMPORTING CHROMATOGRAMS
@@ -235,6 +120,7 @@ class Peak:
 def import_chromatogram():
     try:
         temp_data = []
+        temp_ID = ""
         with open(tk.filedialog.askopenfilename()) as reader:
             #use tk filedialog to select the chromatogram data file
             line = reader.readline()
@@ -244,11 +130,17 @@ def import_chromatogram():
                     #assume any line that can be converted to an integer is
                     #a data point and anything that can't is metadata
                 except ValueError:
-                    pass
+                    if line.find("Sample ID") > -1:
+                        temp_ID=line.replace("Sample ID: ","")
+                    #set the chromatogram ID as the sample ID from the file
                 line = reader.readline()
+                #move on to the next line
 
         history.save()
-        history.present().chromatograms.append(Chromatogram(temp_data))
+        history.present().chromatograms.append(Chromatogram({
+            "data":temp_data,
+            "ID":temp_ID
+            }))
         #create new chromatogram in current SaveState
         #history.present().active().index=len(history.present().chromatograms-1)
         history.present().active_index=len(history.present().chromatograms)-1
@@ -275,9 +167,13 @@ def on_click(event):
             #only handle clicks while peak picking
             peak_bounds.append(event.xdata)
             if len(peak_bounds)==2:
+                history.present().active().peaks.append(
+                    Peak(history.present().active(),peak_bounds)
+                    )
                 #once a start and end point have been selected, a peak is born
-                history.present().active().peaks.append(Peak(peak_bounds))
                 #the new peak is added to the active chromatogram
+                history.present().active().update()
+                #reindex the peaks & update the peak summary table
                 peak_bounds=[]
                 picking=False
                 #reset these temp variables for the next peak
@@ -302,6 +198,11 @@ menu.bar = tk.Menu(windows["main"])
 
 menu.file = tk.Menu(menu.bar, tearoff=0)
 menu.file.add_command(label="Open", command=import_chromatogram)
+
+menu.file.add_command(label="Export Peak Table",
+    command=lambda : save.export_peaks({
+        "chromatograms":history.present().chromatograms
+    }))
 menu.bar.add_cascade(label="File", menu=menu.file)
 #this creates the "File" dropdown on the menu bar
 
