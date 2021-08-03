@@ -2,10 +2,20 @@
 GENERAL NOTES / KEY FEATURES
 ================================================================
 -Any input that could be aborted by users should instead be kept in a try/except statement
+    +Error handling for backwards peak picking)
 -Need a peaks table
     +https://pandas.pydata.org/docs/reference/api/pandas.plotting.table.html
     +https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.table.html
 -Add chromatogram names
+-py2exe
+
+-test chromatogram.baseline_correct(),chromatogram.time_shift(),
+-finish chromatogram.threshold_autopick to use the first derivative to find
+    peak start and end points.
+
+-add a method that deep updates all the peaks to deal with changes in time/signal series
+-add methods (reference, normalize) to timeshift/scale based on a given peak
+-make a changelog
 
 
 ================================================================
@@ -90,5 +100,3 @@ KNOWN BUGS
 
 -Figure scaling is really gimpy: the peak table gets cut off, and resizing the
     window seems to resize the plot more than the table.
-
-    

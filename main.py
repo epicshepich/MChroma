@@ -8,7 +8,7 @@ import numpy as np
 import tkinter as tk
 import tkinter.filedialog
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import copy
 import sys
 import pathlib
@@ -36,8 +36,8 @@ graph.canvas = FigureCanvasTkAgg(graph.fig, master=windows["main"])
 graph.canvas.draw()
 #this method updates the graph
 #(note: graph does not automatically update when changed)
-graph.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=1)
-
+graph.toolbar = NavigationToolbar2Tk(graph.canvas, windows["main"])
+graph.toolbar.update()
 
 
 blank_gram = Chromatogram({"ID":"","data":[0,0]})
@@ -73,6 +73,11 @@ class SaveState:
     def active(self):
         """This method returns the active chromatogram"""
         return self.chromatograms[self.active_index]
+
+    def __getitem__(self,i):
+        """This method allows direct indexing into a SaveState object to access
+        chromatograms in the list."""
+        return self.chromatograms[i]
 
 class History:
     """The History class is for the instantiation of a master object which
@@ -120,7 +125,7 @@ class History:
         for gram in self.present().chromatograms:
             plot(gram) #redraws each unhidden chromatogram
 
-        ic(history.present().active().peak_table)
+        ic(history.present().active())
         if not history.present().active().peak_table.empty:
             table_temp = history.present().active().peak_table
             #contraction for the next part
@@ -135,6 +140,10 @@ class History:
 
 
 history = History()
+
+def active_chroma():
+    """This function streamlines referencing the active chromatogram."""
+    return history.present().active()
 
 
 #================================================================
@@ -190,18 +199,13 @@ def on_click(event):
             #only handle clicks while peak picking
             peak_bounds.append(event.xdata)
             if len(peak_bounds)==2:
-                history.present().active().peaks.append(
-                    Peak(history.present().active(),peak_bounds)
-                    )
-                #once a start and end point have been selected, a peak is born
-                #the new peak is added to the active chromatogram
-                history.present().active().update()
-                #reindex the peaks & update the peak summary table
+                active_chroma().add_peak(peak_bounds)
+                #Once a start and end point have been selected, a peak is born.
                 history.update()
-                #update the GUI's graph and table
+                #Update the GUI's graph and table.
                 peak_bounds=[]
                 picking=False
-                #reset these temp variables for the next peak
+                #Reset these temp variables for the next peak.
 
 graph.canvas.callbacks.connect('button_press_event', on_click)
 #set on_click as the click event handler for the canvas
@@ -237,6 +241,10 @@ menu.edit.add_command(label="Redo", command=history.redo)
 menu.bar.add_cascade(label="Edit", menu=menu.edit)
 #this creates the "Edit" dropdown on the menu bar
 
+windows["main"].iconbitmap('mchroma.ico')
+#Set icon on window
+
+
 
 #================================================================
 # PACK FRAME ELEMENTS
@@ -244,6 +252,9 @@ menu.bar.add_cascade(label="Edit", menu=menu.edit)
 peak_pick_button = tk.Button(windows["main"],text = "Add peak",
     command = peak_pick)
 peak_pick_button.pack(side="top")
+
+graph.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+#Packs the MatPlotLib graph
 
 
 #================================================================
