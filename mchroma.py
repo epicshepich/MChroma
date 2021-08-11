@@ -185,35 +185,60 @@ def import_chromatogram():
 #================================================================
 # PEAK PICKING
 #================================================================
-picking = False
-peak_bounds = []
+picking = {
+    "n":0,
+    "mode":"",
+    "points":[]
+    }
 
 def on_click(event):
-    global picking,peak_bounds
-    #without this line, the function treats these as undeclared local variables
-    #when they show up
-    if event.inaxes is not None:
-        #only handle clicks on the subplot
-        #print(event.xdata,event.ydata)
-        if picking:
-            #only handle clicks while peak picking
-            peak_bounds.append(event.xdata)
-            if len(peak_bounds)==2:
-                active_chroma().add_peak(peak_bounds)
-                #Once a start and end point have been selected, a peak is born.
-                history.update()
-                #Update the GUI's graph and table.
-                peak_bounds=[]
-                picking=False
-                #Reset these temp variables for the next peak.
+    global picking
+    if picking["n"] > 0 and event.inaxes is not None:
+        #Only handle clicks on the subplot while peak picking.
+        picking["points"].append(event.xdata)
+        if len(picking["points"]) == picking["n"]:
+            #When the desired number of points have been picked, we can
+            #pass them on to whatever function needs them.
+            if picking["mode"] == "peak_bounds":
+                #Pick a peak from a starting and ending point.
+                picking["points"].sort()
+                active_chroma().add_peak(picking["points"])
+            elif picking["mode"] == "peak_crest":
+                #Pick a peak from a high point.
+                pass
+            elif picking["mode"] == "baseline":
+                #Correct the baseline from two points picked on the baseline.
+                picking["points"].sort()
+                active_chroma().baseline_correct(picking["points"])
+            history.update()
+            #Update the GUI's graph and table.
+            picking["points"] = []
+            picking["n"] = 0
+            picking["mode"] = ""
+            #Empty these variables to wait for the next picking event.
 
 graph.canvas.callbacks.connect('button_press_event', on_click)
 #set on_click as the click event handler for the canvas
 
-def peak_pick():
-    """This method toggles peak picking mode"""
+def peak_from_bounds():
+    """This function toggles 2-point peak picking mode, in which a peak is
+    defined from its starting and ending points."""
     global picking
-    picking = not picking
+    picking["n"] = 2
+    picking["mode"] = "peak_bounds"
+
+def peak_from_crest():
+    """This function toggles 1-point peak picking mode, in which a peak is
+    found from a high point in the peak."""
+    global picking
+    picking["n"] = 1
+    picking["mode"] = "peak_crest"
+
+def pick_baseline():
+    """This function toggles point picking for baseline correction."""
+    global picking
+    picking["n"] = 2
+    picking["mode"] = "baseline"
 
 
 #================================================================
@@ -227,21 +252,33 @@ menu.bar = tk.Menu(windows["main"])
 
 menu.file = tk.Menu(menu.bar, tearoff=0)
 menu.file.add_command(label="Open", command=import_chromatogram)
-
 menu.file.add_command(label="Export Peak Table",
     command=lambda : save.export_peaks({
         "chromatograms":history.present().chromatograms
     }))
 menu.bar.add_cascade(label="File", menu=menu.file)
-#this creates the "File" dropdown on the menu bar
+#This creates the "File" dropdown on the menu bar.
 
 menu.edit = tk.Menu(menu.bar, tearoff=0)
 menu.edit.add_command(label="Undo", command=history.undo)
 menu.edit.add_command(label="Redo", command=history.redo)
 menu.bar.add_cascade(label="Edit", menu=menu.edit)
-#this creates the "Edit" dropdown on the menu bar
+#This creates the "Edit" dropdown on the menu bar.
 
-windows["main"].iconbitmap('mchroma.ico')
+menu.peak = tk.Menu(menu.bar, tearoff=0)
+menu.peak.add_command(label="Pick from bounds", command=peak_from_bounds)
+menu.peak.add_command(label="Pick from a point", command=peak_from_crest)
+#menu.peak.add_command(label="Threshold autopick", command=threshold_autopick)
+menu.bar.add_cascade(label="Peak", menu=menu.peak)
+#This creates the "Peak" dropdown on the menu bar.
+
+menu.analysis = tk.Menu(menu.bar, tearoff=0)
+menu.analysis.add_command(label="Baseline correct", command=pick_baseline)
+menu.bar.add_cascade(label="Analysis", menu=menu.analysis)
+#This creates the "Analysis" dropdown on the menu bar.
+
+
+windows["main"].iconbitmap('images/icon/mchroma.ico')
 #Set icon on window
 
 
@@ -249,9 +286,9 @@ windows["main"].iconbitmap('mchroma.ico')
 #================================================================
 # PACK FRAME ELEMENTS
 #================================================================
-peak_pick_button = tk.Button(windows["main"],text = "Add peak",
-    command = peak_pick)
-peak_pick_button.pack(side="top")
+#peak_pick_button = tk.Button(windows["main"],text = "Add peak",
+#    command = peak_from_bounds)
+#peak_pick_button.pack(side="top")
 
 graph.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 #Packs the MatPlotLib graph

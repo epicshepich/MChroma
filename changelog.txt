@@ -1,0 +1,10 @@
+===============================================================================
+README/Changelog Update
+===============================================================================
+
++ Changed name of main script from "main.py" to "mchroma.py"
++ Changed name of "install.py" to "requirements.py"'
++ Replaced "README.txt" with reformatted "README.md"
++ Created changelog
++ Removed "Add Peak" button
++ Moved icon files to new "images/icon" folder

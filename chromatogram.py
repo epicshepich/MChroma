@@ -109,6 +109,21 @@ class Chromatogram:
         self.derivative_series.append(0)
         #we need one more data point at the end so the lengths don't mismatch
 
+    def _update_peaks(self):
+        """This method is used to update peaks when a chromatogram is
+        manipulated (i.e. time series is shifted or signal series is scaled.)
+        A new set of peaks is constructed based on the bounding point indices
+        of the old peaks."""
+        updated_peaks = []
+        for peak in self.peaks:
+            t_0 = self.time_series[peak.i_0]
+            t_f = self.time_series[peak.i_f]
+            #The bounding indices of the peak will not change, even if the
+            #bounding times do.
+            updated_peaks.append(Peak(self,[t_0,t_f],area_mode=peak.area_mode))
+
+        self.peaks = updated_peaks
+
     def update(self):
         """This method is used to ensure that any changes to a chromatogram
         are reflected throughout."""
@@ -137,12 +152,13 @@ class Chromatogram:
         s_f = self.signal_series[i_f] #Signal at second point
         slope = (s_f-s_0)/(i_f-i_0) #Slope of baseline
         self.baseline = [slope * (i_x-i_0) + s_0
-            for i_0,_ in enumerate(self.signal_series)]
+            for i_x,_ in enumerate(self.signal_series)]
         #Signal values of baseline calculated with point slope form
         corrected_signals = [self.signal_series[i] - self.baseline[i]
             for i,_ in enumerate(self.signal_series)]
         self.signal_series = corrected_signals
         #Update signal series by subtracting baseline values
+        self._update_peaks()
         self.update()
 
     def shift_times(self, shift):
@@ -150,6 +166,7 @@ class Chromatogram:
         shifted = [time - shift for time in time_series]
         time_series = shifted
         self.time_shift += shift
+        self._update_peaks()
         self.update()
 
     def scale_signal(self, factor):
@@ -160,21 +177,36 @@ class Chromatogram:
             scaled = [signal*factor for signal in signal_series]
             self.signal_scale *= factor
             self.signal_series = scaled
+            self._update_peaks()
             self.update()
 
-    def normalize(self, reference):
+    def normalize(self, reference, dim="area", norm_to=1):
         """This method normalizes the signal series with respect to a reference
-        peak by scaling the signal data such that the crest of the peak has a
-        signal equal to 1."""
-        self.scale_signal(1/reference.height)
+        peak.
 
+        Positional Arguments:
+            reference -- a peak object to use as a reference to normalize to
+
+        Keyword Arguments:
+            dim -- the quantity which is to be normalized. Valid options are
+                'height' and 'area'.
+            norm_to -- the target value of the height/area after normalization.
+
+            With default kwargs, the chromatogram will be scaled such that the
+            area of the reference integrates to 1.
+            """
+        if dim == "area":
+            self.scale_signal(norm_to/reference.area)
+        elif dim == "height":
+            self.scale_signal(norm_to/reference.height)
+        else:
+            raise ValueError("Normalization dimension must be\
+                 'area' or 'height!'") from None
 
     def shift_by_reference(self, reference):
         """This method shifts the time scale based on a reference peak."""
         self.shift_times(reference.retention_time)
         self.reference_peak = reference
-
-
 
     def threshold_autopick(self,threshold,delta=200):
         """This method automatically picks peaks above a certain threshold"""
@@ -202,11 +234,6 @@ class Chromatogram:
         #the peaks that are above the threshold, but instead what we want is to
         #include the entirety of any peak whose maximum height is above the
         #threshold.
-
-
-
-
-
 
 
 #================================================================
@@ -251,6 +278,7 @@ class Peak:
             self.areas[key]=sum(self.signal_series)-self.area_modifiers[key]
         #areas computed with each mode
         self.area = self.areas[area_mode]
+        self.area_mode = area_mode
         #area computed with the desired mode
 
         i_maxima = [index for index in range(len(self.time_series))\

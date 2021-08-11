@@ -1,12 +1,11 @@
 ================================================================
 GENERAL NOTES / KEY FEATURES
 ================================================================
--Any input that could be aborted by users should instead be kept in a try/except statement
-    +Error handling for backwards peak picking)
--Need a peaks table
+-Peaks table
     +https://pandas.pydata.org/docs/reference/api/pandas.plotting.table.html
     +https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.table.html
--Add chromatogram names
+    +Probably going to need to decouple from window
+-Add functionality for editing chromatogram names
 -py2exe
 
 -test chromatogram.baseline_correct(),chromatogram.time_shift(),
@@ -15,13 +14,13 @@ GENERAL NOTES / KEY FEATURES
 
 -add a method that deep updates all the peaks to deal with changes in time/signal series
 -add methods (reference, normalize) to timeshift/scale based on a given peak
--make a changelog
 
 
 ================================================================
 QUALITY OF LIFE FEATURES
 ================================================================
 -Automatic peak picking based on signal threshold
+-Chain peak picking
 -Allow deleting/editing picked peaks
 -Update peaks by changing values on table
 -Still allow manually setting peak bounds
