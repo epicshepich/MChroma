@@ -1,11 +1,11 @@
-#M|Chroma
+# M|Chroma
 An open-source software for the analysis of chromatograms.
 
-##Getting Started
-###Installation
+## Getting Started
+### Installation
 Either clone the repository or download the .zip file and extract.
 
-###Requirements
+### Requirements
 You will need to install Python to use this software. M|Chroma is developed
 with Python 3.8.8, so that is the safest version to use, but it has been tested
 with Python 3.7 with no issues. Download Python 3.8.8 from:
@@ -13,18 +13,18 @@ with Python 3.7 with no issues. Download Python 3.8.8 from:
 
 You should then install the required packages by running requirements.py.
 
-###Running the Program
+### Running the Program
 Start the software by running mchroma.py. Tutorial coming soon!
 
-##Current Features
-###Implemented Features
+## Current Features
+### Implemented Features
 - Peak picking
 - Automatic calculation of retention time, theoretical plate count, peak width
     peak area, and more
 - Baseline correction
 - Peak summary table exporting to .csv file
 
-###Unimplemented/In-development Features
+### Unimplemented/In-development Features
 For a more detailed description of planned features, check out agenda.txt.
 - Modified area calculations (base-valley, valley-base, and valley-valley)
 - Time scale shifting/peak referencing
@@ -32,7 +32,7 @@ For a more detailed description of planned features, check out agenda.txt.
 - Automatic peak picking by threshold
 - Single-click peak picking
 
-##Challenges, Bugs, and Other Complications
+## Challenges, Bugs, and Other Complications
 - Currently, this program only supports .asc files exported from Shimadzu
     CLASS-VP analysis software.
 - Peak summary table is cut off. This can be manually fixed to some extent by
