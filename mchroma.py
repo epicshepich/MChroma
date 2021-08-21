@@ -19,7 +19,7 @@ from icecream import ic
 class Empty:
     def __init__(self):
         pass
-    #empty class for making standalone objects
+    #Empty class for making standalone objects.
 
 #================================================================
 #INITIALIZE GUI
@@ -40,7 +40,7 @@ graph.toolbar = NavigationToolbar2Tk(graph.canvas, windows["main"])
 graph.toolbar.update()
 
 
-blank_gram = Chromatogram({"ID":"","data":[0,0]})
+blank_gram = Chromatogram({"name":"","data":[0,0]})
 blank_gram.update()
 #create a blank chromatogram solely for the purpose of extracting headers for
 #the peak summary table
@@ -152,7 +152,7 @@ def active_chroma():
 def import_chromatogram():
     try:
         temp_data = []
-        temp_ID = ""
+        temp_name = ""
         with open(tk.filedialog.askopenfilename()) as reader:
             #use tk filedialog to select the chromatogram data file
             line = reader.readline()
@@ -163,15 +163,15 @@ def import_chromatogram():
                     #a data point and anything that can't is metadata
                 except ValueError:
                     if line.find("Sample ID") > -1:
-                        temp_ID=line.replace("Sample ID: ","")
-                    #set the chromatogram ID as the sample ID from the file
+                        temp_name=line.replace("Sample ID: ","").replace("\n","")
+                    #Set the chromatogram ID as the sample ID from the file.
                 line = reader.readline()
-                #move on to the next line
+                #Move on to the next line.
 
         history.save()
         history.present().chromatograms.append(Chromatogram({
             "data":temp_data,
-            "ID":temp_ID
+            "name":temp_name
             }))
         #create new chromatogram in current SaveState
         #history.present().active().index=len(history.present().chromatograms-1)
@@ -202,14 +202,15 @@ def on_click(event):
             if picking["mode"] == "peak_bounds":
                 #Pick a peak from a starting and ending point.
                 picking["points"].sort()
-                active_chroma().add_peak(picking["points"])
+                active_chroma().add_peak(active_chroma().time2index(picking["points"]))
             elif picking["mode"] == "peak_crest":
                 #Pick a peak from a high point.
+                active_chroma().one_point_peak(active_chroma().time2index(picking["points"][0]))
                 pass
             elif picking["mode"] == "baseline":
                 #Correct the baseline from two points picked on the baseline.
                 picking["points"].sort()
-                active_chroma().baseline_correct(picking["points"])
+                active_chroma().baseline_correct(active_chroma().time2index(picking["points"]))
             history.update()
             #Update the GUI's graph and table.
             picking["points"] = []

@@ -1,8 +1,9 @@
 """This module defines the Chromatogram and Peak classes"""
-
 import numpy as np
 import pandas as pd
 from icecream import ic
+
+TOLERANCE = 50
 #================================================================
 # CHROMATOGRAM
 #================================================================
@@ -20,7 +21,7 @@ class Chromatogram:
         #Initialize raw_data and signal_series as separate memory objects
         #so that raw_data can be remembered when signal_series is changed by
         #normalization, etc.
-        self.ID=params["ID"]
+        self.name = params["name"]
         self.time_scale=0.0016667#Number of data points recorded per minute
         self.time_series=[t*self.time_scale for t in range(len(self.signal_series))]
         #convert independent variable from data point # to time in minutes
@@ -98,7 +99,8 @@ class Chromatogram:
         return self.peaks[i]
 
     def __repr__(self):
-        return "Chromatogram object "+self.ID+" :" + str(self.peak_table)
+        pd.set_option("display.precision", 2)
+        return f"Chromatogram {self.name} <{id(self)}>:\n{str(self.peak_table)}\n"
 
     def compute_derivative(self):
         """This method is used to calculate the first-derivative series from
@@ -109,6 +111,32 @@ class Chromatogram:
         self.derivative_series.append(0)
         #we need one more data point at the end so the lengths don't mismatch
 
+    def time2index(self,time):
+        """This method converts a list of times to a list of corresponding data
+        point indices."""
+        output = None
+        if isinstance(time,(list,tuple)):
+            indices = []
+            for t in time:
+                indices.append(int(np.round((t-self.time_shift)/self.time_scale)))
+                output = indices
+        elif isinstance(time,(float,int)):
+            output = int(np.round((time-self.time_shift)/self.time_scale))
+        return output
+
+    def index2time(self,index):
+        """This method converts a list of data point indices to a list of
+        time points."""
+        output = None
+        if isinstance(index,(list,tuple)):
+            time = []
+            for i in index:
+                time.append(i*self.time_scale+self.time_shift)
+            output = time
+        elif isinstance(index,int):
+            output = index*self.time_scale+self.time_shift
+        return output
+
     def _update_peaks(self):
         """This method is used to update peaks when a chromatogram is
         manipulated (i.e. time series is shifted or signal series is scaled.)
@@ -116,12 +144,7 @@ class Chromatogram:
         of the old peaks."""
         updated_peaks = []
         for peak in self.peaks:
-            t_0 = self.time_series[peak.i_0]
-            t_f = self.time_series[peak.i_f]
-            #The bounding indices of the peak will not change, even if the
-            #bounding times do.
-            updated_peaks.append(Peak(self,[t_0,t_f],area_mode=peak.area_mode))
-
+            updated_peaks.append(Peak(self,[peak.i_0,peak.i_f],area_mode=peak.area_mode))
         self.peaks = updated_peaks
 
     def update(self):
@@ -142,12 +165,9 @@ class Chromatogram:
         the new baseline as the line passing through both points.
 
         Arguments:
-            bounds -- a list of times [start, end] (probably constructed from
-            click event data.)"""
-        t_0 = bounds[0] #First time point
-        t_f = bounds[1] #Second time point
-        i_0 = int(np.round(t_0/self.time_scale + self.time_shift)) #Index of first point
-        i_f = int(np.round(t_f/self.time_scale + self.time_shift)) #Index of second point
+            bounds -- a list of indices [start, end]"""
+        i_0, i_f = bounds #Bounding indices.
+        t_0, t_f = self.index2time(bounds) #Bounding times.
         s_0 = self.signal_series[i_0] #Signal at first point
         s_f = self.signal_series[i_f] #Signal at second point
         slope = (s_f-s_0)/(i_f-i_0) #Slope of baseline
@@ -163,7 +183,7 @@ class Chromatogram:
 
     def shift_times(self, shift):
         """This method shifts the time series by a given amount of time."""
-        shifted = [time - shift for time in time_series]
+        shifted = [time + shift for time in time_series]
         time_series = shifted
         self.time_shift += shift
         self._update_peaks()
@@ -208,22 +228,101 @@ class Chromatogram:
         self.shift_times(reference.retention_time)
         self.reference_peak = reference
 
+    def detect_bounds(self, point):
+        """This method finds the bounding indices of a feature (peak) from a
+        single index within the peak by examining the first derivative.
+
+        The location on the peak is detected (left, right, or plateau) and
+        from there, the bounds are detected as points past the crest (plateau)
+        whose first derivatives are zero (below the TOLERANCE threshold)."""
+        location = ""
+        if abs(self.derivative_series[point]) < TOLERANCE*self.signal_scale:
+            location = "top"
+        elif self.derivative_series[point] < 0:
+            location = "right"
+        else:
+            location = "left"
+
+        left = point
+        right = point
+
+        while True:
+            left -= 1
+            #Step through the feature backwards to find the left bound.
+            if location == "left" and abs(self.derivative_series[left]) < TOLERANCE*self.signal_scale:
+                #Bound is found when the left tail reaches a plateau (zero derivative).
+                break
+            elif location == "left" and -self.derivative_series[left] > TOLERANCE*self.signal_scale:
+                #Bound is also found when the left tail finds the end of another
+                #peak (negative derivative).
+                break
+            elif location == "top" and self.derivative_series[left] > TOLERANCE*self.signal_scale:
+                #The left tail is found when the top begins to to slope (positive derivative).
+                location = "left"
+                continue
+            elif location == "right" and self.derivative_series[left] > TOLERANCE*self.signal_scale:
+                location = "left"
+                #There may not be a top plateau, so the left tail is found when
+                #derivative is positive while exploring the right tail.
+                continue
+            elif location == "right" and abs(self.derivative_series[left]) < TOLERANCE*self.signal_scale:
+                location = "top"
+                #The top is found when the right tail gives way to a plateau.
+                continue
+            else:
+                continue
+
+        while True:
+            right += 1
+            #Step through the feature forwards to find the right bound.
+            if location == "right" and abs(self.derivative_series[right]) < TOLERANCE*self.signal_scale:
+                #Bound is found when the right tail reaches a plateau (zero derivative).
+                break
+            elif location == "right" and self.derivative_series[right] > TOLERANCE*self.signal_scale:
+                #Bound is also found when the right tail finds the start of another
+                #peak (positive derivative).
+                break
+            elif location == "top" and -self.derivative_series[right] > TOLERANCE*self.signal_scale:
+                #The right tail is found when the top begins to to slope (negative derivative).
+                location = "right"
+                continue
+            elif location == "left" and -self.derivative_series[right] > TOLERANCE*self.signal_scale:
+                location = "right"
+                #There may not be a top plateau, so the right tail is found when
+                #derivative is negative while exploring the left tail.
+                continue
+            elif location == "left" and abs(self.derivative_series[right]) < TOLERANCE*self.signal_scale:
+                location = "top"
+                #The top is found when the left tail gives way to a plateau.
+                continue
+            else:
+                continue
+
+        return [left,right]
+
+    def one_point_peak(self,point):
+        """This method adds a peak from a single index within the feature,
+        using the detect_bounds() method to find the bounding indices of the
+        peak."""
+        self.add_peak(self.detect_bounds(point))
+
+
     def threshold_autopick(self,threshold,delta=200):
         """This method automatically picks peaks above a certain threshold"""
         features=[]
         #Keep track of the features above the threshold in this list.
         above_threshold = False
-        temp_bounds = tuple()
+        temp_bounds = []
         for index,signal in enumerate(self.signal_series):
             if not above_threshold:
                 if signal > threshold:
-                    temp_bounds += (index,)
+                    temp_bounds.append(index)
                     above_threshold = True
                     #When the signal first exceeds the threshold, define the
                     #start of a new feature.
             else:
                 if signal < threshold:
-                    temp_bounds += (index,)
+                    temp_bounds.append(index)
                     above_threshold = False
                     features.append(temp_bounds)
                     #When the signal of a feature drops below the threshold,
@@ -234,6 +333,15 @@ class Chromatogram:
         #the peaks that are above the threshold, but instead what we want is to
         #include the entirety of any peak whose maximum height is above the
         #threshold.
+        for feature in temp_bounds:
+            self.one_point_peak(feature[0])
+            #Instead of reinveinting the wheel, peaks are made from the
+            #detected features by using one_point_peak() to find their bounds.
+
+    def load_dict(self,dictionary):
+        """This method loads data from a dict of chromatogram data."""
+        self.__dict__ = dictionary
+
 
 
 #================================================================
@@ -245,13 +353,12 @@ class Peak:
     half-height width, retention time, etc."""
 
     def __init__(self, parent_gram, bounds, area_mode="bb"):
-        self.t_0 = bounds[0]#starting time and height of click
-        self.t_f = bounds[1]#ending time and height of click
-        self.i_0 = int(
-            np.round(self.t_0/parent_gram.time_scale + parent_gram.time_shift))
-        self.i_f = int(
-            np.round(self.t_f/parent_gram.time_scale + parent_gram.time_shift))
-        #indices of incident and final data points in the chromatogram raw data
+        """Peak object is defined by its parent chromatogram and its
+        bounding indices."""
+        self.i_0, self.i_f = bounds
+        #Indices of incident and final data points in the chromatogram raw data.
+        self.t_0, self.t_f = parent_gram.index2time(bounds)
+        #Starting and ending time of peak feature.
         self.time_series = parent_gram.time_series[self.i_0:self.i_f+1]
         self.signal_series = parent_gram.signal_series[self.i_0:self.i_f+1]
         #subset of raw data contained in peak
@@ -303,8 +410,5 @@ class Peak:
         except:
             print("Error computing half-height width")
 
-        #ic(self.retention_time)
-        #ic(self.area)
-        #ic(self.height)
-        #ic(self.width_hh)
-        #ic(self.plates)
+    def __repr__(self):
+        return f"Peak object <{id(self)}>"
