@@ -194,7 +194,7 @@ class Chromatogram:
         if factor == 0:
             print("Cannot scale signal to 0 or data will be lost!")
         else:
-            scaled = [signal*factor for signal in signal_series]
+            scaled = [signal*factor for signal in self.signal_series]
             self.signal_scale *= factor
             self.signal_series = scaled
             self._update_peaks()

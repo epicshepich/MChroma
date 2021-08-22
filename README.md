@@ -26,13 +26,14 @@ Start the software by running mchroma.py. Tutorial coming soon!
     peak area, and more
 - Baseline correction
 - Peak summary table exporting to .csv file
+- Signal scaling
 
 
 ### Unimplemented/In-development Features
 For a more detailed description of planned features, check out agenda.txt.
 - Modified area calculations (base-valley, valley-base, and valley-valley)
 - Time scale shifting/peak referencing
-- Signal scaling/normalization
+- Normalization
 - Automatic peak picking by threshold
 
 

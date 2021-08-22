@@ -1,3 +1,10 @@
+## Input Dialogue Update
+- Added input dialogue classes in new file dialogues.py:
+    - Abstract base class InputDialogue
+    - MultiEntryInput, a class defining a popup containing one or more
+        tkinter.Entry fields.
+- Implemented MultiEntryInput in Analysis>Scale Signal menu action.
+
 
 ## Peak Bounds Update
 - Added \_\_repr__() method to peak class

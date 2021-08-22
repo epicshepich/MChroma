@@ -2,6 +2,7 @@
 # IMPORT MODULES
 #================================================================
 from chromatogram import Chromatogram, Peak
+import dialogues as tkd
 import save as save
 import pandas as pd
 import numpy as np
@@ -243,6 +244,18 @@ def pick_baseline():
 
 
 #================================================================
+# ANALYSIS FUNCTIONS
+#================================================================
+def scale_signal():
+    windows["scale signal popup"] = tkd.MultiEntryInput(windows["main"],["Scale factor"])
+    scale_factor = float(windows["scale signal popup"].results[0])
+    active_chroma().scale_signal(scale_factor)
+    history.update()
+
+
+
+
+#================================================================
 # MENU BAR
 #================================================================
 menu = Empty()
@@ -275,6 +288,7 @@ menu.bar.add_cascade(label="Peak", menu=menu.peak)
 
 menu.analysis = tk.Menu(menu.bar, tearoff=0)
 menu.analysis.add_command(label="Baseline correct", command=pick_baseline)
+menu.analysis.add_command(label="Scale signal", command=scale_signal)
 menu.bar.add_cascade(label="Analysis", menu=menu.analysis)
 #This creates the "Analysis" dropdown on the menu bar.
 

@@ -6,12 +6,19 @@
     - Probably going to need to decouple from window
 - Add functionality for editing chromatogram names
 - py2exe
-- Add some bug-proofing logic to one-point picking (what if the user selects a
-    valley or a featureless region)
 - Create custom exceptions
 - Test chromatogram shifting/scaling/referencing
 - Test threshold autopicking
 - Version numbering
+
+
+## ERROR HANDLING
+- Add some bug-proofing logic to one-point picking (what if the user selects a
+    valley or a featureless region)
+- Add some bug-proofing logic to aborted popup dialogues
+    - "Defaults" argument for class call? (i.e. aborted signal scale popup
+        returns a 1)
+
 
 
 ## QUALITY OF LIFE FEATURES
@@ -26,7 +33,12 @@
 
 
 ## UI FEATURES
-- Context menus
+- Dialog menus
+    - Add dialogue options for all currently available analysis/peak methods
+    - Add radio button subclass for methods like Chromatogram.normalize()
+    - Custom class for peak picking (bounds, area mode)
+    -
+    - http://www.java2s.com/Code/Python/GUI-Tk/Popupdialogbuildadialog.htm
 - Label peak retention time and area on figure
 - Highlight picked peaks (maybe plot them as separate objects with a fixed color)
 - Determined color scheme based on chromatogram order?
