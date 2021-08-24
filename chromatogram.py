@@ -32,6 +32,7 @@ class Chromatogram:
         #so that raw_data can be remembered when signal_series is changed by
         #normalization, etc.
         self.name = params["name"]
+        self.color = params["color"]
         self.time_scale=0.0016667#Number of data points recorded per minute
         self.time_series=[t*self.time_scale for t in range(len(self.signal_series))]
         #convert independent variable from data point # to time in minutes

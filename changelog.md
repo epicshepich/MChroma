@@ -1,3 +1,9 @@
+## Color Update
+- Chromatogram.color attribute is assigned at construction so that chromatograms
+    can be consistently plotted with the same color
+- Specified list of default colors in settings.cfg
+- Made graph resizable again
+
 ## Legendary Update
 - Added cancel button to InputDialogue objects
 - Added handling for aborted dialogue operations using the cancel control

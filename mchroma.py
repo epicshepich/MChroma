@@ -30,7 +30,7 @@ windows["main"].title("M|Chroma")
 
 graph = Empty() #master object to store all relevant graphing variables
 
-graph.frame = tk.Frame(master = windows["main"])
+graph.frame = tk.Frame(master = windows["main"],background="black")
 
 graph.fig = Figure(figsize=(5, 2), dpi=100)#container for subplots
 graph.plot = graph.fig.add_subplot(111)#subplot is the actual graph
@@ -44,7 +44,7 @@ graph.toolbar = NavigationToolbar2Tk(graph.canvas, graph.frame)
 graph.toolbar.update()
 
 
-blank_gram = Chromatogram({"name":"","data":[0,0]})
+blank_gram = Chromatogram({"name":"","data":[0,0],"color":"#FFFFFF"})
 blank_gram.update()
 #create a blank chromatogram solely for the purpose of extracting headers for
 #the peak summary table
@@ -59,8 +59,32 @@ def plot(gram):
     """This method takes a Chromatogram object as its argument and it draws
     the chromatogram the graph."""
     if not gram.hidden:
-        graph.plot.plot(gram.time_series, gram.signal_series)
+        graph.plot.plot(gram.time_series, gram.signal_series, color=gram.color)
         graph.canvas.draw()
+
+#================================================================
+#INITIALIZE COLOR PALETTE
+#================================================================
+graph.colors = []
+"""with open("rgb.txt","r") as reader:
+    #Read XKCD colors in order as default chromatogram colors.
+    line = reader.readline()
+    while line != "":
+        line = reader.readline().replace("\n","")
+        color = line.split("	") #Names and colors delimited by tabs
+        #There's a mysterious "" that gets saved in the split. Might be a
+        #carriage return, but idk.
+        if len(color) == 3:
+            graph.colors.append(color[1])"""
+with open("settings.cfg","r") as reader:
+    line = reader.readline()
+    while line != "":
+        if "DEFAULT_COLORS" in line:
+            graph.colors = line.replace("DEFAULT_COLORS ","").split(" ")
+            break
+        line = reader.readline()
+
+graph.color_index = 0
 
 
 #================================================================
@@ -177,12 +201,14 @@ def import_chromatogram():
         history.save()
         history.present().chromatograms.append(Chromatogram({
             "data":temp_data,
-            "name":temp_name
+            "name":temp_name,
+            "color":graph.colors[graph.color_index]
             }))
-        #create new chromatogram in current SaveState
-        #history.present().active().index=len(history.present().chromatograms-1)
+        #Create new chromatogram in current SaveState.
+        graph.color_index +=1
+        #Change the color of the next loaded chromatogram.
         history.present().active_index=len(history.present().chromatograms)-1
-        #set the new chromatogram as active for analysis
+        #Set the new chromatogram as active for analysis
         history.update()
         #update plots
     except FileNotFoundError:
@@ -380,8 +406,12 @@ def repack_legend():
 #================================================================
 graph.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 #Packs the MatPlotLib graph
-graph.frame.grid(row=0,column=0,sticky=tk.N+tk.S+tk.E+tk.W)
+graph.frame.grid(row=0,column=0,sticky="nsew")
 legend.frame.grid(row=0,column=1)
+windows["main"].columnconfigure(0, weight=1)
+windows["main"].rowconfigure(0, weight=1)
+#Weight=1 assigns excess space to that portion of the grid; however, the cells
+#will not expand unless their sticky argument is specified.
 
 
 #================================================================

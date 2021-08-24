@@ -20,6 +20,8 @@
 - Add some bug-proofing logic to aborted popup dialogues
     - "Defaults" argument for class call? (i.e. aborted signal scale popup
         returns a 1)
+- Add handling for missing chromatogram parameters
+- Create a contingency for running out of colors
 
 
 ## QUALITY OF LIFE FEATURES
@@ -30,23 +32,24 @@
 - Still allow manually setting peak bounds
 - Help menu
 - Settings menu
-- Add support for other types of data file (though I would need a sample inspect)
+- Add support for other types of data file (though I would need a sample to inspect)
 
 
 ## UI FEATURES
-- Fix graph (make it resizable again, or at least make it big)
+- Change chromatogram order in stack
 - COLORS
-    - Define a set sequence of colors for chromatograms to initialize as
-    - Save the color as an attribute of the chromatogram
+    - Adjust default colors so that they are more distinct in the greyscale
     - Display a color box in the legend that, when clicked, will open a color change
         dialogue to change the chromatogram's color
+    - https://stackoverflow.com/questions/42697933/colormap-with-maximum-distinguishable-colours
+    - https://projects.susielu.com/viz-palette
 - Add a crosshair cursor
     - https://stackoverflow.com/questions/63195460/how-to-have-a-fast-crosshair-mouse-cursor-for-subplots-in-matplotlib
 - Dialog menus
     - Add dialogue options for all currently available analysis/peak methods
     - Add radio button subclass for methods like Chromatogram.normalize()
     - Custom class for peak picking (bounds, area mode)
-    -
+    - Add title argument to dialogue class
     - http://www.java2s.com/Code/Python/GUI-Tk/Popupdialogbuildadialog.htm
 - Label peak retention time and area on figure
 - Highlight picked peaks (maybe plot them as separate objects with a fixed color)
@@ -78,7 +81,7 @@
 - Chromatogram colors
 - Default integration mode
 - Error logging
-- Store settings in a cfg file
+- Choose derivative calculation mode (left slope, right slope, lr average)
 
 
 ## KNOWN BUGS

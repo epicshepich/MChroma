@@ -18,4 +18,14 @@ f,g=[1,2]
 
 result = "\x18"
 results = ["Test","\x18"]
-print(result in "\x18")
+#print(result in "\x18")
+
+import seaborn
+
+#xkcd_colors = list(seaborn.xkcd_rgb.keys())
+#List of xkcd colors for coloring clusters on scatter plot.
+
+#print(xkcd_colors)
+
+
+print(colors)
