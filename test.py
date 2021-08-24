@@ -8,10 +8,14 @@ class Test:
         print("test")
 
 test = Test()
-print(test.__dict__)
+#print(test.__dict__)
 
 test.__dict__["a"] = "A"
-print(test.a)
+#print(test.a)
 
 f,g=[1,2]
-print(f)
+#print(f)
+
+result = "\x18"
+results = ["Test","\x18"]
+print(result in "\x18")

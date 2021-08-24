@@ -1,3 +1,12 @@
+## Legendary Update
+- Added cancel button to InputDialogue objects
+- Added handling for aborted dialogue operations using the cancel control
+    character "\x18"
+- Added file settings.cfg for system parameters (such as NOISE_TOLERANCE)
+- Used tkinter.Frame objects and the .grid() method to beautify input dialogues
+- **Added chromatogram legend to left of graph that allows toggling chromatogram visibility and changing the active chromatogram**
+
+
 ## Input Dialogue Update
 - Added input dialogue classes in new file dialogues.py:
     - Abstract base class InputDialogue

@@ -29,15 +29,18 @@ windows = {"main":tk.Tk()} # initialize
 windows["main"].title("M|Chroma")
 
 graph = Empty() #master object to store all relevant graphing variables
+
+graph.frame = tk.Frame(master = windows["main"])
+
 graph.fig = Figure(figsize=(5, 2), dpi=100)#container for subplots
 graph.plot = graph.fig.add_subplot(111)#subplot is the actual graph
 #graph.plot.xlabel("Time (min.)")
-graph.canvas = FigureCanvasTkAgg(graph.fig, master=windows["main"])
+graph.canvas = FigureCanvasTkAgg(graph.fig, master=graph.frame)
 #TKinter object containing the MatPlotLib figure
 graph.canvas.draw()
-#this method updates the graph
+#This method updates the graph.
 #(note: graph does not automatically update when changed)
-graph.toolbar = NavigationToolbar2Tk(graph.canvas, windows["main"])
+graph.toolbar = NavigationToolbar2Tk(graph.canvas, graph.frame)
 graph.toolbar.update()
 
 
@@ -122,7 +125,8 @@ class History:
 
     def update(self):
         """"This method is invoked to apply a new SaveState"""
-        graph.plot.cla() #clears the plot
+        graph.plot.cla() #Clears the plot.
+        graph.canvas.draw() #Redraws plot as blank.
         for gram in self.present().chromatograms:
             plot(gram) #redraws each unhidden chromatogram
 
@@ -138,6 +142,7 @@ class History:
                 cellText=[[""]*(len(blank_gram.peak_table.columns))],
                 colLabels=blank_gram.peak_table.columns,loc="bottom")
             #Make the table blank again when a peakless chromatogram is active
+        repack_legend()
 
 
 history = History()
@@ -248,9 +253,12 @@ def pick_baseline():
 #================================================================
 def scale_signal():
     windows["scale signal popup"] = tkd.MultiEntryInput(windows["main"],["Scale factor"])
-    scale_factor = float(windows["scale signal popup"].results[0])
-    active_chroma().scale_signal(scale_factor)
-    history.update()
+    scale_factor = windows["scale signal popup"].results[0]
+    if scale_factor == "\x18":
+        print("Scale operation aborted.")
+    else:
+        active_chroma().scale_signal(float(scale_factor))
+        history.update()
 
 
 
@@ -297,16 +305,83 @@ windows["main"].iconbitmap('images/icon/mchroma.ico')
 #Set icon on window
 
 
+#================================================================
+# CHROMATOGRAM LEGEND
+#================================================================
+legend = Empty()
+#Container for variables related to the legend.
+legend.frame = tk.Frame(windows["main"])
+#Master container for legend widgets.
+legend.radio_frame = tk.Frame(legend.frame)
+#Container for radio buttons to select active chromatogram.
+legend.check_frame = tk.Frame(legend.frame)
+#Container for check buttons to toggle chromatogram visibility.
+legend.radio_var = tk.IntVar()
+
+legend.checks = []
+legend.check_vars = []
+legend.radios = []
+
+def toggle_gram(i):
+    chromatogram = history.present().chromatograms[i]
+
+    if legend.check_vars[i].get() == 1:
+        chromatogram.hidden = False
+    else:
+        chromatogram.hidden = True
+
+    history.update()
+
+
+def change_active(i):
+    """This method assigns the active chromatogram."""
+    history.present().active_index = i
+
+
+def repack_legend():
+    """This method updates the legend when new chromatograms are
+    added."""
+    for widget in legend.frame.winfo_children():
+        widget.destroy()
+        #Clear the legend frame.
+
+    legend.radio_var.set(history.present().active_index)
+
+    legend.checks = []
+    legend.check_vars = []
+    legend.radios = []
+    #legend.toggle_funcs = [lambda : toggle_gram(m) for m,_ in enumerate(history.present().chromatograms)]
+
+    for i,chromatogram in enumerate(history.present().chromatograms):
+        check_var = tk.IntVar()
+        legend.check_vars.append(check_var)
+
+        radio = tk.Radiobutton(legend.frame,var=legend.radio_var,value=i,
+            command = lambda:change_active(legend.radio_var.get()))
+        check = tk.Checkbutton(legend.frame,text=chromatogram.name,
+            var=check_var, command = lambda n = i:toggle_gram(n))
+            #That n=i line is essential, otherwise all commands take the last
+            #value of n as their argument.
+
+        if not chromatogram.hidden:
+            check.select()
+            #Box is checked if chromatogram is unhidden.
+
+        radio.grid(row=i,column=0)
+        check.grid(row=i,column=1,sticky=tk.W)
+        legend.checks.append(check)
+
+
+
+
 
 #================================================================
 # PACK FRAME ELEMENTS
 #================================================================
-#peak_pick_button = tk.Button(windows["main"],text = "Add peak",
-#    command = peak_from_bounds)
-#peak_pick_button.pack(side="top")
-
 graph.canvas.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 #Packs the MatPlotLib graph
+graph.frame.grid(row=0,column=0,sticky=tk.N+tk.S+tk.E+tk.W)
+legend.frame.grid(row=0,column=1)
 
 
 #================================================================

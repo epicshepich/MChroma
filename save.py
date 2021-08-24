@@ -18,7 +18,7 @@ def export_peaks(params):
         #open a filedialog to pick output file name and destination
         peak_tables = [gram.peak_table for gram in params["chromatograms"]]
         table_temp = pd.concat(peak_tables,
-            keys=[gram.ID for gram in params["chromatograms"]])
+            keys=[gram.name for gram in params["chromatograms"]])
         #concatenate all peak summary tables into one data frame indexed by
         #chromatogram names
         table_temp.to_csv(str(filepath), index = False, header=True)

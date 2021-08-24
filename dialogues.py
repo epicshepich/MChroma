@@ -12,8 +12,18 @@ class InputDialogue(ABC):
 
         Arguments:
             instance -- a subclass instance; i.e. self in subclass.__init__()"""
-        instance.ok = tk.Button(instance.top, text='OK', command=instance.submit)
-        instance.ok.pack()
+        self.results = "\x18"
+        #Initialize result to cancel character in case the popup is closed.
+        button_frame = tk.Frame(instance.top)
+        instance.cancel_button = tk.Button(button_frame, text='Cancel', command=instance.cancel)
+        instance.cancel_button.grid(row=0,column=0)
+        instance.ok_button = tk.Button(button_frame, text='OK', command=instance.submit)
+        instance.ok_button.grid(row=0,column=1)
+        button_frame.grid(row=len(instance.frames),column=0)
+        #After all the label/entry frames are packed, the button frame is
+        #packed at the bottom. It holds the Cancel and OK buttons.
+
+        #instance.top.protocol("WM_DELETE_WINDOW", instance.cancel)
 
         instance.top.grab_set()
         instance.top.wait_window()
@@ -28,9 +38,15 @@ class InputDialogue(ABC):
         when defining a subclass."""
         pass
 
+    def cancel(self):
+        """This method defines behaviour for clicking the 'Cancel' button. It
+        saves a '\x18' string (Cancel control character) to the results."""
+        self.results = "\x18"
+        self.top.destroy()
+
     def submit(self):
-        """This method saves the input and destroys the popup. Called when the
-        'OK' button is clicked."""
+        """This method defines behavoiur for clicking the 'OK' button. It saves
+        the input and destroys the popup."""
         self.save_input()
         self.top.destroy()
 
@@ -46,15 +62,29 @@ class MultiEntryInput(InputDialogue):
 
         self.labels = []
         self.entries = []
-        for label in labels:
-            self.labels.append(tk.Label(top, text=f"{label}: "))
-            self.labels[-1].pack()
-            self.entries.append(tk.Entry(top))
-            self.entries[-1].pack()
+        self.frames = []
+        for i, label in enumerate(labels):
+            frame = tk.Frame(top)
+            label = tk.Label(frame, text=f"{label}: ")
+            entry = tk.Entry(frame)
+            label.grid(row=0,column=0)
+            entry.grid(row=0,column=1)
+            frame.grid(row=i,column=0)
+            #Pack the widget as a grid with one column, whose rows are frames
+            #containing a label and an entry packed side by side.
+            self.labels.append(label)
+            self.entries.append(entry)
+            self.frames.append(frame)
+            #Save the elements in case they need to be referenced (e.g.
+            #the save_input() method accesses self.entries).
 
         super().__init__(self)
 
     def save_input(self):
         self.results = []
         for entry in self.entries:
-            self.results.append(entry.get())
+            value = entry.get()
+            if value == "":
+                self.results.append("\x18")
+            else:
+                self.results.append(value)

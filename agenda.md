@@ -1,13 +1,15 @@
 ## GENERAL NOTES / KEY FEATURES
-- Use numpy for chromatogram data
-- Peaks table
+- Figure out how to integrate dialogues with point picking
+- Use numpy for chromatogram data (?)
+- Fix peaks table
     - https://pandas.pydata.org/docs/reference/api/pandas.plotting.table.html
     - https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.table.html
     - Probably going to need to decouple from window
 - Add functionality for editing chromatogram names
 - py2exe
 - Create custom exceptions
-- Test chromatogram shifting/scaling/referencing
+    - Warnings for bad inputs?
+- Test chromatogram shifting/referencing
 - Test threshold autopicking
 - Version numbering
 
@@ -18,7 +20,6 @@
 - Add some bug-proofing logic to aborted popup dialogues
     - "Defaults" argument for class call? (i.e. aborted signal scale popup
         returns a 1)
-
 
 
 ## QUALITY OF LIFE FEATURES
@@ -33,6 +34,14 @@
 
 
 ## UI FEATURES
+- Fix graph (make it resizable again, or at least make it big)
+- COLORS
+    - Define a set sequence of colors for chromatograms to initialize as
+    - Save the color as an attribute of the chromatogram
+    - Display a color box in the legend that, when clicked, will open a color change
+        dialogue to change the chromatogram's color
+- Add a crosshair cursor
+    - https://stackoverflow.com/questions/63195460/how-to-have-a-fast-crosshair-mouse-cursor-for-subplots-in-matplotlib
 - Dialog menus
     - Add dialogue options for all currently available analysis/peak methods
     - Add radio button subclass for methods like Chromatogram.normalize()
@@ -49,10 +58,7 @@
 - Capacity factor
 - Read time scale from data file
 - Chromatogram signal addition and subtraction (remove reference peaks)
-
-
-## ACTIVE CHROMATOGRAM
-- Toggle active chromatogram with sidebar (radio box for active & checkbox for hidden)
+- Noise and S/N ratio
 
 
 ## SAVING/LOADING CHROMATOGRAMS
@@ -76,6 +82,8 @@
 
 
 ## KNOWN BUGS
+- "instance.top.protocol("WM_DELETE_WINDOW", instance.cancel)" in dialogues.py
+    does not result in instance.cancel() being called on closing out of the popup.
 - When trying to undo importing the first chromatogram:
         Exception in Tkinter callback
         Traceback (most recent call last):

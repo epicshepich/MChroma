@@ -3,7 +3,17 @@ import numpy as np
 import pandas as pd
 from icecream import ic
 
-TOLERANCE = 50
+#================================================================
+# SETTING SYSTEM PARAMETERS
+#================================================================
+NOISE_TOLERANCE = 50
+
+with open("settings.cfg","r") as settings:
+    line = settings.readline()
+    while line != "":
+        if line.split(" ")[0] == "NOISE_TOLERANCE":
+            NOISE_TOLERANCE = float(line.split(" ")[1])
+        line = settings.readline()
 #================================================================
 # CHROMATOGRAM
 #================================================================
@@ -234,9 +244,9 @@ class Chromatogram:
 
         The location on the peak is detected (left, right, or plateau) and
         from there, the bounds are detected as points past the crest (plateau)
-        whose first derivatives are zero (below the TOLERANCE threshold)."""
+        whose first derivatives are zero (below the NOISE_TOLERANCE threshold)."""
         location = ""
-        if abs(self.derivative_series[point]) < TOLERANCE*self.signal_scale:
+        if abs(self.derivative_series[point]) < NOISE_TOLERANCE*self.signal_scale:
             location = "top"
         elif self.derivative_series[point] < 0:
             location = "right"
@@ -249,23 +259,23 @@ class Chromatogram:
         while True:
             left -= 1
             #Step through the feature backwards to find the left bound.
-            if location == "left" and abs(self.derivative_series[left]) < TOLERANCE*self.signal_scale:
+            if location == "left" and abs(self.derivative_series[left]) < NOISE_TOLERANCE*self.signal_scale:
                 #Bound is found when the left tail reaches a plateau (zero derivative).
                 break
-            elif location == "left" and -self.derivative_series[left] > TOLERANCE*self.signal_scale:
+            elif location == "left" and -self.derivative_series[left] > NOISE_TOLERANCE*self.signal_scale:
                 #Bound is also found when the left tail finds the end of another
                 #peak (negative derivative).
                 break
-            elif location == "top" and self.derivative_series[left] > TOLERANCE*self.signal_scale:
+            elif location == "top" and self.derivative_series[left] > NOISE_TOLERANCE*self.signal_scale:
                 #The left tail is found when the top begins to to slope (positive derivative).
                 location = "left"
                 continue
-            elif location == "right" and self.derivative_series[left] > TOLERANCE*self.signal_scale:
+            elif location == "right" and self.derivative_series[left] > NOISE_TOLERANCE*self.signal_scale:
                 location = "left"
                 #There may not be a top plateau, so the left tail is found when
                 #derivative is positive while exploring the right tail.
                 continue
-            elif location == "right" and abs(self.derivative_series[left]) < TOLERANCE*self.signal_scale:
+            elif location == "right" and abs(self.derivative_series[left]) < NOISE_TOLERANCE*self.signal_scale:
                 location = "top"
                 #The top is found when the right tail gives way to a plateau.
                 continue
@@ -275,23 +285,23 @@ class Chromatogram:
         while True:
             right += 1
             #Step through the feature forwards to find the right bound.
-            if location == "right" and abs(self.derivative_series[right]) < TOLERANCE*self.signal_scale:
+            if location == "right" and abs(self.derivative_series[right]) < NOISE_TOLERANCE*self.signal_scale:
                 #Bound is found when the right tail reaches a plateau (zero derivative).
                 break
-            elif location == "right" and self.derivative_series[right] > TOLERANCE*self.signal_scale:
+            elif location == "right" and self.derivative_series[right] > NOISE_TOLERANCE*self.signal_scale:
                 #Bound is also found when the right tail finds the start of another
                 #peak (positive derivative).
                 break
-            elif location == "top" and -self.derivative_series[right] > TOLERANCE*self.signal_scale:
+            elif location == "top" and -self.derivative_series[right] > NOISE_TOLERANCE*self.signal_scale:
                 #The right tail is found when the top begins to to slope (negative derivative).
                 location = "right"
                 continue
-            elif location == "left" and -self.derivative_series[right] > TOLERANCE*self.signal_scale:
+            elif location == "left" and -self.derivative_series[right] > NOISE_TOLERANCE*self.signal_scale:
                 location = "right"
                 #There may not be a top plateau, so the right tail is found when
                 #derivative is negative while exploring the left tail.
                 continue
-            elif location == "left" and abs(self.derivative_series[right]) < TOLERANCE*self.signal_scale:
+            elif location == "left" and abs(self.derivative_series[right]) < NOISE_TOLERANCE*self.signal_scale:
                 location = "top"
                 #The top is found when the left tail gives way to a plateau.
                 continue
