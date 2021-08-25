@@ -1,4 +1,4 @@
-## Update
+## Edit Dialogue Update
 - Discovered compatibility issue with Python 3.7.3
 - Updated legend header
 - **Created dialogue EditChromatogram which is used for editing Chromatogram
