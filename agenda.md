@@ -6,7 +6,9 @@
     - https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.table.html
     - Probably going to need to decouple from window
 - Add functionality for editing chromatogram names
-- py2exe
+- py2exe (?)
+    - Ideally I want something that can install a version of python then run
+        requirements.py
 - Create custom exceptions
     - Warnings for bad inputs?
 - Test chromatogram shifting/referencing
@@ -17,11 +19,6 @@
 ## ERROR HANDLING
 - Add some bug-proofing logic to one-point picking (what if the user selects a
     valley or a featureless region)
-- Add some bug-proofing logic to aborted popup dialogues
-    - "Defaults" argument for class call? (i.e. aborted signal scale popup
-        returns a 1)
-- Add handling for missing chromatogram parameters
-- Create a contingency for running out of colors
 
 
 ## QUALITY OF LIFE FEATURES
@@ -36,13 +33,9 @@
 
 
 ## UI FEATURES
+- Add tooltips
 - Change chromatogram order in stack
-- COLORS
-    - Adjust default colors so that they are more distinct in the greyscale
-    - Display a color box in the legend that, when clicked, will open a color change
-        dialogue to change the chromatogram's color
-    - https://stackoverflow.com/questions/42697933/colormap-with-maximum-distinguishable-colours
-    - https://projects.susielu.com/viz-palette
+- Add a text box for printed output
 - Add a crosshair cursor
     - https://stackoverflow.com/questions/63195460/how-to-have-a-fast-crosshair-mouse-cursor-for-subplots-in-matplotlib
 - Dialog menus
@@ -53,8 +46,10 @@
     - http://www.java2s.com/Code/Python/GUI-Tk/Popupdialogbuildadialog.htm
 - Label peak retention time and area on figure
 - Highlight picked peaks (maybe plot them as separate objects with a fixed color)
-- Determined color scheme based on chromatogram order?
 - Use icons for buttons (steal them from MestReNova?)
+- Color (links for reference)
+    - https://stackoverflow.com/questions/42697933/colormap-with-maximum-distinguishable-colours
+    - https://projects.susielu.com/viz-palette
 
 
 ## ANALYTICAL FEATURES

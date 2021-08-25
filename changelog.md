@@ -1,8 +1,20 @@
+## Color Update II
+- Allow loading multiple chromatograms from the file selection dialogue
+- Added SAMPLING_RATE parameter to settings.cfg specifying the default sampling
+    rate in Hz
+- Importing chromatogram reads sampling rate from data file (if present), or falls
+    back on default
+- Added contingencies in Chromatogram class to handle missing/invalid arguments
+- Added header to legend
+- Added color selection buttons to legend
+
+
 ## Color Update
 - Chromatogram.color attribute is assigned at construction so that chromatograms
     can be consistently plotted with the same color
 - Specified list of default colors in settings.cfg
 - Made graph resizable again
+
 
 ## Legendary Update
 - Added cancel button to InputDialogue objects

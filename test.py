@@ -28,4 +28,16 @@ import seaborn
 #print(xkcd_colors)
 
 
-print(colors)
+#print(colors)
+
+def test(**kwargs):
+    print(kwargs)
+
+#test(a="a",b="b")
+#print("-1".isnumeric())
+
+
+
+empties = ("",0,None)
+types = (int,float)
+print(validate(100,empties,types))

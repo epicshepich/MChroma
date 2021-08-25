@@ -8,6 +8,7 @@ import pandas as pd
 import numpy as np
 import tkinter as tk
 import tkinter.filedialog
+import tkinter.colorchooser
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import copy
@@ -30,7 +31,7 @@ windows["main"].title("M|Chroma")
 
 graph = Empty() #master object to store all relevant graphing variables
 
-graph.frame = tk.Frame(master = windows["main"],background="black")
+graph.frame = tk.Frame(master = windows["main"])
 
 graph.fig = Figure(figsize=(5, 2), dpi=100)#container for subplots
 graph.plot = graph.fig.add_subplot(111)#subplot is the actual graph
@@ -44,7 +45,7 @@ graph.toolbar = NavigationToolbar2Tk(graph.canvas, graph.frame)
 graph.toolbar.update()
 
 
-blank_gram = Chromatogram({"name":"","data":[0,0],"color":"#FFFFFF"})
+blank_gram = Chromatogram(data=[0,0])
 blank_gram.update()
 #create a blank chromatogram solely for the purpose of extracting headers for
 #the peak summary table
@@ -181,36 +182,53 @@ def active_chroma():
 #================================================================
 def import_chromatogram():
     try:
-        temp_data = []
-        temp_name = ""
-        with open(tk.filedialog.askopenfilename()) as reader:
-            #use tk filedialog to select the chromatogram data file
-            line = reader.readline()
-            while line != '':  # The EOF char is an empty string
-                try:
-                    temp_data.append(int(line))
-                    #assume any line that can be converted to an integer is
-                    #a data point and anything that can't is metadata
-                except ValueError:
-                    if line.find("Sample ID") > -1:
-                        temp_name=line.replace("Sample ID: ","").replace("\n","")
-                    #Set the chromatogram ID as the sample ID from the file.
-                line = reader.readline()
-                #Move on to the next line.
+        paths = tk.filedialog.askopenfilename(multiple=True)
+        #Use tk filedialog to select the chromatogram data file(s) as a tuple.
+        for path in paths:
+            temp_data = []
+            temp_name = ""
+            temp_rate = ""
+            if graph.color_index < len(graph.colors):
+                temp_color = graph.colors[graph.color_index]
+            else:
+                temp_color = "#000000"
+                #Once default colors are exhausted, default chromatogram color
+                #will be black.
 
-        history.save()
-        history.present().chromatograms.append(Chromatogram({
-            "data":temp_data,
-            "name":temp_name,
-            "color":graph.colors[graph.color_index]
-            }))
-        #Create new chromatogram in current SaveState.
-        graph.color_index +=1
-        #Change the color of the next loaded chromatogram.
-        history.present().active_index=len(history.present().chromatograms)-1
-        #Set the new chromatogram as active for analysis
-        history.update()
-        #update plots
+            with open(path) as reader:
+                line = reader.readline()
+                while line != '':  # The EOF char is an empty string
+                    if line.replace("\n","").replace("-","").isnumeric():
+                        #Treat line as data point if it is just a number.
+                        #Note: remove minus sign because isnumeric doesn't
+                        #recognize negative numbers.
+                        temp_data.append(int(line))
+                    elif "Sample ID" in line:
+                        temp_name=line.replace("Sample ID: ","").replace("\n","")
+                        #Assign chromatogram name as the sample ID the data file.
+                    elif "Sampling Rate" in line:
+                        temp_rate = float(line.replace("Sampling Rate: ","").replace(" Hz\n",""))
+                    line = reader.readline()
+                    #Move on to the next line.
+
+                if temp_name == "":
+                    temp_name = path.split("/")[-1].replace(".dat.asc","")
+                    #Fallback chromatogram name is file name without extension.
+
+            history.save()
+            history.present().chromatograms.append(Chromatogram(
+                data=temp_data,
+                name=temp_name,
+                color=temp_color,
+                sampling_rate = temp_rate
+                ))
+            #Create new chromatogram in current SaveState.
+            graph.color_index +=1
+            #Change the color of the next loaded chromatogram.
+            history.present().active_index=len(history.present().chromatograms)-1
+            #Set the new chromatogram as active for analysis
+            history.update()
+            #update plots
     except FileNotFoundError:
         print("Please select a file!")
 
@@ -363,6 +381,14 @@ def change_active(i):
     """This method assigns the active chromatogram."""
     history.present().active_index = i
 
+def change_color(i):
+    """This method changes the color attribute of a chromatogram."""
+    chromatogram = history.present().chromatograms[i]
+    color = tk.colorchooser.askcolor(color=chromatogram.color,
+                      title = f"Select color for {chromatogram.name}")[1]
+    if color is not None:
+        chromatogram.color = color
+    history.update()
 
 def repack_legend():
     """This method updates the legend when new chromatograms are
@@ -377,24 +403,30 @@ def repack_legend():
     legend.check_vars = []
     legend.radios = []
     #legend.toggle_funcs = [lambda : toggle_gram(m) for m,_ in enumerate(history.present().chromatograms)]
-
+    tk.Label(legend.frame,text="✎").grid(row=0,column=0)
+    tk.Label(legend.frame,text="👁").grid(row=0,column=1)
     for i,chromatogram in enumerate(history.present().chromatograms):
         check_var = tk.IntVar()
         legend.check_vars.append(check_var)
 
         radio = tk.Radiobutton(legend.frame,var=legend.radio_var,value=i,
             command = lambda:change_active(legend.radio_var.get()))
-        check = tk.Checkbutton(legend.frame,text=chromatogram.name,
+        check = tk.Checkbutton(legend.frame,
             var=check_var, command = lambda n = i:toggle_gram(n))
             #That n=i line is essential, otherwise all commands take the last
             #value of n as their argument.
+        button = tk.Button(legend.frame,text="\x09",bg=chromatogram.color,
+            command = lambda p=i:change_color(p))
+        name = tk.Label(legend.frame,text=chromatogram.name)
 
         if not chromatogram.hidden:
             check.select()
             #Box is checked if chromatogram is unhidden.
 
-        radio.grid(row=i,column=0)
-        check.grid(row=i,column=1,sticky=tk.W)
+        radio.grid(row=i+1,column=0)
+        check.grid(row=i+1,column=1)
+        button.grid(row=i+1,column=2)
+        name.grid(row=i+1,column=3,sticky="w")
         legend.checks.append(check)
 
 

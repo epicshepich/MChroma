@@ -7,13 +7,27 @@ from icecream import ic
 # SETTING SYSTEM PARAMETERS
 #================================================================
 NOISE_TOLERANCE = 50
+SAMPLING_RATE = 10.000640
 
 with open("settings.cfg","r") as settings:
     line = settings.readline()
     while line != "":
         if line.split(" ")[0] == "NOISE_TOLERANCE":
             NOISE_TOLERANCE = float(line.split(" ")[1])
+        elif line.split(" ")[0] == "SMAPLING_RATE":
+            SAMPLING_RATE = float(line.split(" ")[1])
         line = settings.readline()
+
+
+#================================================================
+# HANDY INPUT HANDLING FUNCTION
+#================================================================
+def validate(var,vals,types):
+    """This function checks if an input is valid by ensuring that does not have
+    a restricted value and that it is of a specified type."""
+    return bool(var not in vals and isinstance(var,types))
+
+empties = ("",[],tuple(),None,0,{})
 #================================================================
 # CHROMATOGRAM
 #================================================================
@@ -24,21 +38,46 @@ class Chromatogram:
     Parameters:
         raw_data - expects a list of integers corresponding to signal intensity
             in detector counts"""
-    def __init__(self,params):
-        self.raw_data = [point for point in params["data"]]
-        self.signal_series = [point for point in params["data"]]
-        self.baseline = [0 for point in params["data"]]
+    def __init__(self,**kwargs):
+        self.raw_data = [point for point in kwargs["data"]]
+        self.signal_series = [point for point in kwargs["data"]]
+        self.baseline = [0 for point in kwargs["data"]]
         #Initialize raw_data and signal_series as separate memory objects
         #so that raw_data can be remembered when signal_series is changed by
         #normalization, etc.
-        self.name = params["name"]
-        self.color = params["color"]
-        self.time_scale=0.0016667#Number of data points recorded per minute
+
+        if "color" in kwargs and validate(kwargs["color"],empties,(str)):
+            self.color = kwargs["color"]
+        else:
+            self.color = "#000000"
+        #Set plotting color
+
+        if "name" in kwargs and validate(kwargs["name"],empties,(str)):
+            self.name = kwargs["name"]
+        else:
+            self.name = "unnamed chromatogram"
+        #Set chromatogram name.
+
+        if "sampling_rate" in kwargs and validate(kwargs["sampling_rate"],empties,(int,float)):
+            self.time_scale = 1/(60*kwargs["sampling_rate"])
+        else:
+            self.time_scale=1/(60*SAMPLING_RATE)
+        #Specify number of data points recorded per minute.
+
         self.time_series=[t*self.time_scale for t in range(len(self.signal_series))]
         #convert independent variable from data point # to time in minutes
 
-        self.time_shift = 0 #Variable to track net shift in time series
-        self.signal_scale = 1 #Variable to track net scaling of signal series
+        if "time_shift" in kwargs and validate(kwargs["time_shift"],empties,(int,float)):
+            self.time_shift = kwargs["time_shift"]
+        else:
+            self.time_shift = 0
+        #Variable to track net shift in time series
+
+        if "signal_scale" in kwargs and validate(kwargs["signal_scale"],empties,(int,float)):
+            self.signal_scale = kwargs["signal_scale"]
+        else:
+            self.signal_scale = 1 #Variable to track net scaling of signal series
+
         self.reference_peak = None #Peak used as reference for adjusting time.
 
         self.derivative_series=[self.signal_series[x+1]-self.signal_series[x]\
@@ -47,8 +86,7 @@ class Chromatogram:
         self.derivative_series.append(0)
         #we need one more data point at the end so the lengths don't mismatch
         self.peaks=[]
-        self.hidden=False
-        #toggles display of chromatogram on graph
+        self.hidden=False #Toggles display of chromatogram on graph.
         self.peak_table=pd.DataFrame()
 
     def update_peak_table(self):
