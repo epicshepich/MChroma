@@ -150,6 +150,11 @@ class History:
 
     def update(self):
         """"This method is invoked to apply a new SaveState"""
+        for gram in history.present().chromatograms:
+            gram.active = False
+        history.present().active().active = True
+        #Ensure that only one chromatogram is active.
+
         graph.plot.cla() #Clears the plot.
         graph.canvas.draw() #Redraws plot as blank.
         for gram in self.present().chromatograms:
@@ -326,6 +331,7 @@ menu.bar.add_cascade(label="File", menu=menu.file)
 #This creates the "File" dropdown on the menu bar.
 
 menu.edit = tk.Menu(menu.bar, tearoff=0)
+menu.edit.add_command(label="Chromatogram", command=lambda:edit_chromatogram(history.present().active_index))
 menu.edit.add_command(label="Undo", command=history.undo)
 menu.edit.add_command(label="Redo", command=history.redo)
 menu.bar.add_cascade(label="Edit", menu=menu.edit)
@@ -369,10 +375,7 @@ legend.radios = []
 def toggle_gram(i):
     chromatogram = history.present().chromatograms[i]
 
-    if legend.check_vars[i].get() == 1:
-        chromatogram.hidden = False
-    else:
-        chromatogram.hidden = True
+    chromatogram.hidden = not bool(legend.check_vars[i].get())
 
     history.update()
 
@@ -380,15 +383,39 @@ def toggle_gram(i):
 def change_active(i):
     """This method assigns the active chromatogram."""
     history.present().active_index = i
+    history.update()
 
 def change_color(i):
-    """This method changes the color attribute of a chromatogram."""
+    """This function changes the color attribute of a chromatogram."""
     chromatogram = history.present().chromatograms[i]
     color = tk.colorchooser.askcolor(color=chromatogram.color,
                       title = f"Select color for {chromatogram.name}")[1]
     if color is not None:
         chromatogram.color = color
     history.update()
+
+def edit_chromatogram(i):
+    """This function opens the edit chromatogram dialogue."""
+    gram = history.present().chromatograms[i]
+    windows["edit gram popup"] = tkd.EditChromatogram(windows["main"],gram)
+    results = windows["edit gram popup"].results
+    if "\x18" in results:
+        print("Edit chromatogram operation aborted.")
+    else:
+        gram.name = results["name"]
+        gram.hidden = results["hidden"]
+        gram.color = results["color"]
+        gram.scale_signal(results["signal_scale"],set=True)
+        gram.scale_time(results["time_scale"],type="period",set=True)
+        gram.shift_time(results["time_shift"],set=True)
+
+        if results["active"]:
+            history.present().active_index=i
+
+        history.update()
+
+
+
 
 def repack_legend():
     """This method updates the legend when new chromatograms are
@@ -403,8 +430,11 @@ def repack_legend():
     legend.check_vars = []
     legend.radios = []
     #legend.toggle_funcs = [lambda : toggle_gram(m) for m,_ in enumerate(history.present().chromatograms)]
-    tk.Label(legend.frame,text="✎").grid(row=0,column=0)
+    tk.Label(legend.frame,text="📌").grid(row=0,column=0)
     tk.Label(legend.frame,text="👁").grid(row=0,column=1)
+    tk.Label(legend.frame,text="Color").grid(row=0,column=2)
+    tk.Label(legend.frame,text="Chromatogram").grid(row=0,column=3)
+    tk.Label(legend.frame,text="Edit").grid(row=0,column=4)
     for i,chromatogram in enumerate(history.present().chromatograms):
         check_var = tk.IntVar()
         legend.check_vars.append(check_var)
@@ -415,9 +445,12 @@ def repack_legend():
             var=check_var, command = lambda n = i:toggle_gram(n))
             #That n=i line is essential, otherwise all commands take the last
             #value of n as their argument.
-        button = tk.Button(legend.frame,text="\x09",bg=chromatogram.color,
+        color_button = tk.Button(legend.frame,text="\x09",bg=chromatogram.color,
             command = lambda p=i:change_color(p))
         name = tk.Label(legend.frame,text=chromatogram.name)
+
+        edit_button = tk.Button(legend.frame,text="🖉",
+            command = lambda q=i:edit_chromatogram(q))
 
         if not chromatogram.hidden:
             check.select()
@@ -425,8 +458,9 @@ def repack_legend():
 
         radio.grid(row=i+1,column=0)
         check.grid(row=i+1,column=1)
-        button.grid(row=i+1,column=2)
+        color_button.grid(row=i+1,column=2)
         name.grid(row=i+1,column=3,sticky="w")
+        edit_button.grid(row=i+1,column=4)
         legend.checks.append(check)
 
 
@@ -444,6 +478,7 @@ windows["main"].columnconfigure(0, weight=1)
 windows["main"].rowconfigure(0, weight=1)
 #Weight=1 assigns excess space to that portion of the grid; however, the cells
 #will not expand unless their sticky argument is specified.
+
 
 
 #================================================================

@@ -11,7 +11,7 @@
         requirements.py
 - Create custom exceptions
     - Warnings for bad inputs?
-- Test chromatogram shifting/referencing
+- Test referencing/normalization
 - Test threshold autopicking
 - Version numbering
 
@@ -19,9 +19,13 @@
 ## ERROR HANDLING
 - Add some bug-proofing logic to one-point picking (what if the user selects a
     valley or a featureless region)
+- Write a better version of str.isnumeric():
+    - try to convert to a float; except return false
+    - possibly keep this function and validate in a separate .py file
 
 
 ## QUALITY OF LIFE FEATURES
+- "Restore defaults" option for EditChromatogram dialogue
 - Keyboard shortcuts
 - Chain peak picking
 - Allow deleting/editing picked peaks
@@ -57,6 +61,8 @@
 - Read time scale from data file
 - Chromatogram signal addition and subtraction (remove reference peaks)
 - Noise and S/N ratio
+- Empirically determine a better default value for NOISE_TOLERANCE
+- Fix bug: plate count changes with time rescaling
 
 
 ## SAVING/LOADING CHROMATOGRAMS
@@ -66,14 +72,12 @@
 - Create a standard for saving data (similar to ascii data but with peak data, offset, scale, etc saved as well)
     - There might be a module that easily saves/loads variables
     - In that case, just export the history object and load it back in?
+- reimplement plotly for exporting nice interactable chromatograms
 
 - plt.savefig('D:\\mpl_logo_with_title.png', dpi=dpi)
 
 
 ## SETTINGS
-- Default time scale
-- Data reader behavior
-- Chromatogram colors
 - Default integration mode
 - Error logging
 - Choose derivative calculation mode (left slope, right slope, lr average)

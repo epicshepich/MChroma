@@ -1,3 +1,20 @@
+## Update
+- Discovered compatibility issue with Python 3.7.3
+- Updated legend header
+- **Created dialogue EditChromatogram which is used for editing Chromatogram
+    object metadata via the UI**
+- Added edit buttons to legend, which use EditChromatogram dialogues
+- Added Edit>Chromatogram toolbar item that opens an EditChromatogram dialogue
+    for the active chromatogram
+- Created method Chromatogram.scale_time, which allows the time_scale
+    attribute to be changed (and reflects the changes throughout the code)
+- Added "set" keyword to Chromatogram.scale_signal, Chromatogram.scale_time,
+    and Chromatogram.shift_time methods which specifies whether the shift/scale
+    factor is to be treated as net or cumulative.
+- Added sample chromatograms to new folder "sample data" for testing
+
+
+
 ## Color Update II
 - Allow loading multiple chromatograms from the file selection dialogue
 - Added SAMPLING_RATE parameter to settings.cfg specifying the default sampling

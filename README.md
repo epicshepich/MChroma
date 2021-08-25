@@ -8,12 +8,13 @@ Either clone the repository or download the .zip file and extract.
 
 
 ### Requirements
-You will need to install Python to use this software. M|Chroma is developed
-with Python 3.8.8, so that is the safest version to use, but it has been tested
-with Python 3.7 with no issues. Download Python 3.8.8 from:
+You will need to install Python >=3.8.0 to use this software. MChroma is not
+compatible with Python 3.7, which does not support an extended Unicode charset.
+M|Chroma is developed with Python 3.8.8, so that is the safest version to use.
+Download Python 3.8.8 from:
 [https://www.python.org/downloads/](https://www.python.org/downloads/).
 
-You should then install the required packages by running requirements.py.
+Once Python is installed, run requirements.py to install the required packages.
 
 
 ### Running the Program

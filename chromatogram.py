@@ -85,8 +85,9 @@ class Chromatogram:
         #computes the right handed slope at any point
         self.derivative_series.append(0)
         #we need one more data point at the end so the lengths don't mismatch
-        self.peaks=[]
-        self.hidden=False #Toggles display of chromatogram on graph.
+        self.peaks = []
+        self.hidden = False #Toggles display of chromatogram on graph.
+        self.active = False
         self.peak_table=pd.DataFrame()
 
     def update_peak_table(self):
@@ -230,24 +231,79 @@ class Chromatogram:
         self._update_peaks()
         self.update()
 
-    def shift_times(self, shift):
-        """This method shifts the time series by a given amount of time."""
-        shifted = [time + shift for time in time_series]
-        time_series = shifted
-        self.time_shift += shift
+    def _update_time_series(self):
+        """This method is used to apply changes to the time_scale and time_shift
+        attributes to the time_series list."""
+        self.time_series=[t*self.time_scale+self.time_shift for t in range(len(self.signal_series))]
+
+    def shift_time(self, shift, set=False):
+        """This method shifts the time series by a given amount of time.
+
+        Arguments:
+            shift -- the amount of time to shift by
+            set -- when enabled, the time_shift attribute will be set to the
+                shift; otherwise the shift will be applied cumulatively"""
+        if set:
+            self.time_shift = shift
+        else:
+            self.time_shift += shift
+
+        self._update_time_series()
         self._update_peaks()
         self.update()
 
-    def scale_signal(self, factor):
-        """This method scales the signal series by a specified scale factor."""
+    def scale_signal(self, factor,set=False):
+        """This method scales the signal series by a specified scale factor.
+
+        Arguments:
+            factor -- the factor to scale the signal by
+            set -- when enabled, the signal_scale attribute will be set to the
+                factor; otherwise the factor will be applied cumulatively"""
         if factor == 0:
             print("Cannot scale signal to 0 or data will be lost!")
         else:
-            scaled = [signal*factor for signal in self.signal_series]
-            self.signal_scale *= factor
-            self.signal_series = scaled
+            if set:
+                self.signal_scale = factor
+            else:
+                self.signal_scale *= factor
+
+            self.signal_series = [self.signal_scale*point for point in self.raw_data]
+
             self._update_peaks()
             self.update()
+
+    def scale_time(self, factor, type="period",set=True):
+        """This method changes the time scale factor.
+
+        Arguments:
+            factor -- the factor by which to scale the time series
+            type -- the type of value the factor is, options are 'period' in
+                units of minutes per point and 'frequency' in points per second.
+            set -- when enabled, the time_scale attribute will be set to the
+                factor; otherwise the factor will be applied cumulatively"
+            """
+
+        if type not in ("period","frequency"):
+            print("Invalid argument: type must be 'period' or 'frequency'.")
+
+
+        if validate(factor,empties,(int,float)):
+            if type == "period":
+                if set:
+                    self.time_scale = factor
+                else:
+                    self.time_scale *= factor
+            elif type == "frequency":
+                if set:
+                    self.time_scale = 1/(60*factor)
+                else:
+                    self.time_scale *= 1/(60*factor)
+            self.time_series=[t*self.time_scale+self.time_shift for t in range(len(self.signal_series))]
+        else:
+            print("Invalid argument for Chromatogram.rescale_time()")
+
+        self._update_peaks()
+        self.update()
 
     def normalize(self, reference, dim="area", norm_to=1):
         """This method normalizes the signal series with respect to a reference
@@ -265,16 +321,16 @@ class Chromatogram:
             area of the reference integrates to 1.
             """
         if dim == "area":
-            self.scale_signal(norm_to/reference.area)
+            self.scale_signal(norm_to/reference.area,set=True)
         elif dim == "height":
-            self.scale_signal(norm_to/reference.height)
+            self.scale_signal(norm_to/reference.height,self=True)
         else:
             raise ValueError("Normalization dimension must be\
                  'area' or 'height!'") from None
 
     def shift_by_reference(self, reference):
         """This method shifts the time scale based on a reference peak."""
-        self.shift_times(reference.retention_time)
+        self.shift_time(reference.retention_time,set=True)
         self.reference_peak = reference
 
     def detect_bounds(self, point):

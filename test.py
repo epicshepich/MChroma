@@ -20,7 +20,6 @@ result = "\x18"
 results = ["Test","\x18"]
 #print(result in "\x18")
 
-import seaborn
 
 #xkcd_colors = list(seaborn.xkcd_rgb.keys())
 #List of xkcd colors for coloring clusters on scatter plot.
@@ -36,8 +35,7 @@ def test(**kwargs):
 #test(a="a",b="b")
 #print("-1".isnumeric())
 
+d = {"a","\x19"}
+#print("a" in d
 
-
-empties = ("",0,None)
-types = (int,float)
-print(validate(100,empties,types))
+print("-12".isnumeric())
